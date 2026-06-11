@@ -1,0 +1,35 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+.npm/
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+.next/
+
+# Python & Environment
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+
+# Massive Model Files & HF Cache
+backend/model/
+*.gguf
+.cache/
+hf-cli/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+backend/app.log

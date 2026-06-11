@@ -1,0 +1,111 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* MetaGen Premium Dynamic Theme - Unified Blue Accent */
+:root {
+  --background: oklch(0.99 0.002 240);
+  --foreground: oklch(0.2 0.01 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.01 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.01 240);
+  /* Unified Blue */
+  --primary: oklch(0.55 0.18 250);
+  --primary-foreground: oklch(0.99 0.002 240);
+  --secondary: oklch(0.96 0.005 240);
+  --secondary-foreground: oklch(0.3 0.01 240);
+  --muted: oklch(0.97 0.005 240);
+  --muted-foreground: oklch(0.45 0.01 240);
+  --accent: oklch(0.6 0.18 200);
+  --accent-foreground: oklch(0.99 0.002 240);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0.002 25);
+  --border: oklch(0.9 0.01 240);
+  --input: oklch(0.94 0.005 240);
+  --ring: oklch(0.55 0.18 250);
+  --radius: 1.25rem;
+}
+
+.dark {
+  --background: oklch(0.08 0.005 240);
+  --foreground: oklch(0.92 0.01 240);
+  --card: oklch(0.11 0.01 240);
+  --card-foreground: oklch(0.92 0.01 240);
+  --popover: oklch(0.11 0.01 240);
+  --popover-foreground: oklch(0.92 0.01 240);
+  /* Unified Blue for Dark Mode */
+  --primary: oklch(0.65 0.18 250);
+  --primary-foreground: oklch(0.1 0.01 240);
+  --secondary: oklch(0.16 0.01 240);
+  --secondary-foreground: oklch(0.85 0.02 240);
+  --muted: oklch(0.14 0.01 240);
+  --muted-foreground: oklch(0.55 0.02 240);
+  --accent: oklch(0.65 0.15 200);
+  --accent-foreground: oklch(0.1 0.01 240);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.95 0.01 25);
+  --border: oklch(0.2 0.01 240);
+  --input: oklch(0.15 0.01 240);
+  --ring: oklch(0.65 0.18 250);
+}
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground selection:bg-primary/30 overflow-hidden;
+    transition-property: background-color, color;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+  }
+}
+
+/* Premium Background Patterns */
+@layer utilities {
+  .bg-grid-white {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='currentColor' stroke-opacity='0.04'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+  }
+  /* Enhanced dark mode grid */
+  .dark .bg-grid-white {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgba(255,255,255,0.06)' stroke-opacity='1'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+  }
+  .bg-dot-white {
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 16px 16px;
+    mask-image: radial-gradient(ellipse at center, black, transparent);
+  }
+  .glass-panel {
+    @apply bg-card/80 backdrop-blur-3xl border border-border/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] dark:bg-card/50 dark:border-white/10 dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.6)];
+  }
+}
