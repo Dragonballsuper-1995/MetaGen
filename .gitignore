@@ -33,3 +33,6 @@ Thumbs.db
 # Logs
 *.log
 backend/app.log
+backend/.env
+frontend/.env.local
+frontend/.env.production

@@ -18,12 +18,12 @@ A high-performance, full-stack application that leverages Large Language Models 
 MetaGen is designed to eliminate the friction of content publishing. By pasting a video script, creators instantly receive a comprehensive SEO package tailored to the YouTube algorithm. 
 
 The application features a **Dual-Path Hybrid Inference Engine**:
-1. **Lightning Fast (Groq):** Uses the Groq API and `llama-3.3-70b-versatile` to stream full metadata packages in under 2 seconds.
+1. **Lightning Fast (Groq):** Uses the Groq API and `openai/gpt-oss-120b` (OpenAI's 120B open-weight model at ~500 T/s) to stream full metadata packages in under 1.5 seconds.
 2. **Resilient Fallback (Local Mistral):** If the external API is unavailable, the backend gracefully falls back to a locally hosted Mistral 7B (GGUF) model running on a Hugging Face Space CPU, ensuring the application never goes offline.
 
 ## ✨ Key Features
 
-- **Blazing Fast Streaming:** Real-time generation using Groq's LPU inference engine and Server-Sent Events (SSE).
+- **Blazing Fast Streaming:** Real-time generation using Groq's LPU inference engine (~500 tokens/sec) and Server-Sent Events (SSE).
 - **Cinematic UI/UX:** A stunning, highly optimized glassmorphism interface built with Next.js, Tailwind CSS 4, and Framer Motion. Smooth transitions with zero layout shift.
 - **Dark/Light Mode:** First-class support for system themes using dynamic Oklch color profiles.
 - **Smart Fallback Architecture:** Zero-downtime AI generation. The backend intelligently routes between cloud APIs and local LLM execution.
@@ -41,7 +41,7 @@ The application features a **Dual-Path Hybrid Inference Engine**:
 
 ### Backend (Deployed on Hugging Face Spaces)
 - **Framework:** FastAPI (Python 3.11)
-- **Primary AI Engine:** Groq API (`llama-3.3-70b-versatile`)
+- **Primary AI Engine:** Groq API (`openai/gpt-oss-120b`, configurable via `GROQ_MODEL`)
 - **Fallback AI Engine:** Llama.cpp via `llama-cpp-python` (Mistral 7B Q4 GGUF)
 - **Deployment:** Dockerized environment optimized for CPU execution with lazy model loading to bypass repository storage limits.
 

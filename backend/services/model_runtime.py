@@ -17,7 +17,10 @@ def _utc_now_iso() -> str:
 
 
 def _load_model_for_warmup() -> None:
-    from backend.ai_engine import get_llm
+    from backend.ai_engine import _get_groq_client, get_llm
+
+    if _get_groq_client() is not None:
+        return
 
     get_llm()
 

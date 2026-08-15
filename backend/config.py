@@ -137,9 +137,13 @@ class Settings(BaseSettings):
     # --- Redis / Celery ---
     redis_url: str = Field(default="redis://localhost:6379/0")
 
-    # --- API Keys (optional, only needed for specific features) ---
+    # --- API Keys & Cloud Models (optional, only needed for specific features) ---
     hf_token: str = Field(default="", description="HuggingFace API token")
     groq_api_key: str = Field(default="", description="Groq API key for lightning-fast inference")
+    groq_model: str = Field(
+        default="openai/gpt-oss-120b",
+        description="Groq model ID for cloud inference (e.g. openai/gpt-oss-120b)",
+    )
     youtube_api_key: str = Field(default="", description="YouTube Data API key")
 
     # --- Security ---
@@ -176,9 +180,10 @@ class Settings(BaseSettings):
     )
 
     model_config = {
-        "env_file": ".env",
+        "env_file": (".env", "backend/.env"),
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
+        "extra": "ignore",
     }
 
 

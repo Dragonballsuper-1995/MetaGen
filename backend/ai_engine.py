@@ -1790,19 +1790,20 @@ def _llm_call(
         try:
             inference_start = perf_counter()
             groq_system_prompt = system_prompt + "\n\nYou are a strict API. Output ONLY valid JSON. Do NOT wrap the JSON in markdown formatting (e.g., no ```json). Do NOT add conversational text. Output the raw JSON object directly."
+            groq_max_tokens = max(max_tokens, 2048)
             response = groq.chat.completions.create(
                 messages=[
                     {"role": "system", "content": groq_system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                model="llama-3.3-70b-versatile",
-                max_tokens=max_tokens,
+                model=settings.groq_model,
+                max_tokens=groq_max_tokens,
                 temperature=settings.temperature if temperature is None else temperature,
                 top_p=settings.top_p,
             )
             elapsed = perf_counter() - inference_start
             result_text = response.choices[0].message.content.strip()
-            logger.info("Groq LLM call completed in %.2fs (model=llama-3.3-70b-versatile)", elapsed)
+            logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, settings.groq_model)
             return _parse_json_safe(result_text)
         except Exception as e:
             logger.warning(f"Groq primary call failed, falling back to local model: {e}")
@@ -1843,13 +1844,14 @@ def _llm_stream(
             start = perf_counter()
             token_count = 0
             groq_system_prompt = system_prompt + "\n\nYou are a strict API. Output ONLY valid JSON. Do NOT wrap the JSON in markdown formatting (e.g., no ```json). Do NOT add conversational text. Output the raw JSON object directly."
+            groq_max_tokens = max(max_tokens, 2048)
             response = groq.chat.completions.create(
                 messages=[
                     {"role": "system", "content": groq_system_prompt},
                     {"role": "user", "content": user_msg},
                 ],
-                model="llama-3.3-70b-versatile",
-                max_tokens=max_tokens,
+                model=settings.groq_model,
+                max_tokens=groq_max_tokens,
                 temperature=settings.temperature,
                 top_p=settings.top_p,
                 stream=True,
@@ -1860,7 +1862,7 @@ def _llm_stream(
                     token_count += 1
                     yield content
 
-            logger.info("Groq stream completed in %.2fs (%d chunks)", perf_counter() - start, token_count)
+            logger.info("Groq stream completed in %.2fs (%d chunks, model=%s)", perf_counter() - start, token_count, settings.groq_model)
             return
         except Exception as e:
             logger.warning(f"Groq streaming failed, falling back to local model: {e}")
