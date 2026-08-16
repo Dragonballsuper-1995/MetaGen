@@ -1,0 +1,75 @@
+<svg viewBox="0 0 520 80" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* Embedded Styles for Standalone Rendering */
+    .logo-active { fill: #000000; }
+    .accent-blue { fill: #0084FF; }
+    
+    /* Native Dark Mode Auto-Switching */
+    @media (prefers-color-scheme: dark) {
+      .logo-active { fill: #FFFFFF; }
+    }
+  </style>
+
+  <g transform="translate(10, 16)">
+    
+    <!-- "META" (Heavy Weight: r=4.5, Auto Light/Dark Switch) -->
+    <g class="logo-active">
+      <!-- M -->
+      <g transform="translate(0, 0)">
+        <circle cx="0" cy="0" r="4.5"/><circle cx="0" cy="12" r="4.5"/><circle cx="0" cy="24" r="4.5"/><circle cx="0" cy="36" r="4.5"/><circle cx="0" cy="48" r="4.5"/>
+        <circle cx="12" cy="12" r="4.5"/>
+        <circle cx="24" cy="24" r="4.5"/>
+        <circle cx="36" cy="12" r="4.5"/>
+        <circle cx="48" cy="0" r="4.5"/><circle cx="48" cy="12" r="4.5"/><circle cx="48" cy="24" r="4.5"/><circle cx="48" cy="36" r="4.5"/><circle cx="48" cy="48" r="4.5"/>
+      </g>
+      <!-- E -->
+      <g transform="translate(72, 0)">
+        <circle cx="0" cy="0" r="4.5"/><circle cx="0" cy="12" r="4.5"/><circle cx="0" cy="24" r="4.5"/><circle cx="0" cy="36" r="4.5"/><circle cx="0" cy="48" r="4.5"/>
+        <circle cx="12" cy="0" r="4.5"/><circle cx="24" cy="0" r="4.5"/><circle cx="36" cy="0" r="4.5"/><circle cx="48" cy="0" r="4.5"/>
+        <circle cx="12" cy="24" r="4.5"/><circle cx="24" cy="24" r="4.5"/><circle cx="36" cy="24" r="4.5"/>
+        <circle cx="12" cy="48" r="4.5"/><circle cx="24" cy="48" r="4.5"/><circle cx="36" cy="48" r="4.5"/><circle cx="48" cy="48" r="4.5"/>
+      </g>
+      <!-- T -->
+      <g transform="translate(144, 0)">
+        <circle cx="0" cy="0" r="4.5"/><circle cx="12" cy="0" r="4.5"/><circle cx="24" cy="0" r="4.5"/><circle cx="36" cy="0" r="4.5"/><circle cx="48" cy="0" r="4.5"/>
+        <circle cx="24" cy="12" r="4.5"/><circle cx="24" cy="24" r="4.5"/><circle cx="24" cy="36" r="4.5"/><circle cx="24" cy="48" r="4.5"/>
+      </g>
+      <!-- A -->
+      <g transform="translate(216, 0)">
+        <circle cx="12" cy="0" r="4.5"/><circle cx="24" cy="0" r="4.5"/><circle cx="36" cy="0" r="4.5"/>
+        <circle cx="0" cy="12" r="4.5"/><circle cx="48" cy="12" r="4.5"/>
+        <circle cx="0" cy="24" r="4.5"/><circle cx="12" cy="24" r="4.5"/><circle cx="24" cy="24" r="4.5"/><circle cx="36" cy="24" r="4.5"/><circle cx="48" cy="24" r="4.5"/>
+        <circle cx="0" cy="36" r="4.5"/><circle cx="48" cy="36" r="4.5"/>
+        <circle cx="0" cy="48" r="4.5"/><circle cx="48" cy="48" r="4.5"/>
+      </g>
+    </g>
+
+    <!-- "GEN" (Light Weight: r=2.5, Locked Accent Blue) -->
+    <g class="accent-blue">
+      <!-- G -->
+      <g transform="translate(300, 0)">
+        <circle cx="12" cy="0" r="2.5"/><circle cx="24" cy="0" r="2.5"/><circle cx="36" cy="0" r="2.5"/><circle cx="48" cy="0" r="2.5"/>
+        <circle cx="0" cy="12" r="2.5"/>
+        <circle cx="0" cy="24" r="2.5"/><circle cx="24" cy="24" r="2.5"/><circle cx="36" cy="24" r="2.5"/><circle cx="48" cy="24" r="2.5"/>
+        <circle cx="0" cy="36" r="2.5"/><circle cx="48" cy="36" r="2.5"/>
+        <circle cx="12" cy="48" r="2.5"/><circle cx="24" cy="48" r="2.5"/><circle cx="36" cy="48" r="2.5"/><circle cx="48" cy="48" r="2.5"/>
+      </g>
+      <!-- E -->
+      <g transform="translate(372, 0)">
+        <circle cx="0" cy="0" r="2.5"/><circle cx="0" cy="12" r="2.5"/><circle cx="0" cy="24" r="2.5"/><circle cx="0" cy="36" r="2.5"/><circle cx="0" cy="48" r="2.5"/>
+        <circle cx="12" cy="0" r="2.5"/><circle cx="24" cy="0" r="2.5"/><circle cx="36" cy="0" r="2.5"/><circle cx="48" cy="0" r="2.5"/>
+        <circle cx="12" cy="24" r="2.5"/><circle cx="24" cy="24" r="2.5"/><circle cx="36" cy="24" r="2.5"/>
+        <circle cx="12" cy="48" r="2.5"/><circle cx="24" cy="48" r="2.5"/><circle cx="36" cy="48" r="2.5"/><circle cx="48" cy="48" r="2.5"/>
+      </g>
+      <!-- N -->
+      <g transform="translate(444, 0)">
+        <circle cx="0" cy="0" r="2.5"/><circle cx="0" cy="12" r="2.5"/><circle cx="0" cy="24" r="2.5"/><circle cx="0" cy="36" r="2.5"/><circle cx="0" cy="48" r="2.5"/>
+        <circle cx="12" cy="12" r="2.5"/>
+        <circle cx="24" cy="24" r="2.5"/>
+        <circle cx="36" cy="36" r="2.5"/>
+        <circle cx="48" cy="0" r="2.5"/><circle cx="48" cy="12" r="2.5"/><circle cx="48" cy="24" r="2.5"/><circle cx="48" cy="36" r="2.5"/><circle cx="48" cy="48" r="2.5"/>
+      </g>
+    </g>
+    
+  </g>
+</svg>

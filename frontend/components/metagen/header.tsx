@@ -18,30 +18,22 @@ export function Header({ onHistoryToggle }: HeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/40 backdrop-blur-2xl border-b border-border/50 shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-        {/* Unique Quantum Prism Logo Design */}
+        {/* Custom MetaGen Dot Matrix Logo */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-3.5 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group"
           onClick={() => window.location.reload()}
         >
-          {/* High-Performance SVG Quantum Prism Monogram */}
-          <MetaGenLogo size={40} className="group-hover:scale-105 transition-transform duration-300" />
-          
-          <div className="flex flex-col">
-            <h1 className="text-xl font-black tracking-tighter text-foreground flex items-baseline">
-              META
-              <span className="text-primary ml-0.5">GEN</span>
-            </h1>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground font-bold leading-none">
-                Intelligence
-              </span>
-              <div className="w-1 h-1 rounded-full bg-primary/40" />
-              <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground font-bold leading-none">
-                V2.5
-              </span>
-            </div>
+          <img 
+            src="/logos/header_logo.svg" 
+            alt="MetaGen Logo" 
+            className="h-6 sm:h-7 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+          <div className="flex items-center mt-1">
+            <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground font-bold leading-none hidden sm:inline-block border border-border/50 rounded-full px-2 py-0.5 ml-2 bg-muted/20">
+              V2.5
+            </span>
           </div>
         </motion.div>
 
