@@ -36,3 +36,17 @@ backend/app.log
 backend/.env
 frontend/.env.local
 frontend/.env.production
+# Ignored tracking files
+CONTEXT.md
+DEPLOYMENT_PROGRESS.md
+models.md
+frontend/CONVERSATION.md
+frontend/GEMINI.md
+frontend/lh_report.json
+frontend/lh_report_final.json
+frontend/public/placeholder-logo.png
+frontend/public/placeholder-logo.svg
+frontend/public/placeholder-user.jpg
+frontend/public/placeholder.jpg
+frontend/public/placeholder.svg
+screenshots/
