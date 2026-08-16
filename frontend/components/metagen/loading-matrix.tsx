@@ -36,9 +36,14 @@ export function LoadingMatrix() {
           </span>
           {step === index && (
             <motion.span
-              animate={{ opacity: [1, 0, 1] }}
-              transition={{ repeat: Infinity, duration: 0.8, ease: "steps(2)" }}
-              className="w-2 h-3 bg-primary inline-block"
+              animate={{ opacity: [1, 1, 0, 0, 1] }}
+              transition={{ 
+                repeat: Infinity, 
+                duration: 0.8, 
+                times: [0, 0.49, 0.5, 0.99, 1],
+                ease: "linear" 
+              }}
+              className="w-2 h-3 bg-primary inline-block ml-1"
             />
           )}
           {step > index && (
