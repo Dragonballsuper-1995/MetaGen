@@ -32,7 +32,7 @@ interface MorphingContainerProps {
   state: AppState;
   inputScript: string;
   result: GenerationResult | null;
-  onGenerate: (script: string) => void;
+  onGenerate: (script: string, overrideModel?: ModelChoice) => void;
   onRegenerate: () => void;
   onReset: () => void;
   onInputChange: (script: string) => void;
@@ -206,6 +206,14 @@ export function MorphingContainer({
   const handleSubmit = () => {
     if (script.trim()) {
       onGenerate(script.trim());
+    }
+  };
+
+  const handleModelChangeInOutput = (newModel: ModelChoice) => {
+    onModelChange(newModel);
+    const text = inputScript.trim() || script.trim();
+    if (text) {
+      onGenerate(text, newModel);
     }
   };
 
@@ -469,23 +477,72 @@ export function MorphingContainer({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap items-center justify-between gap-4 mb-4 shrink-0"
+                className="flex flex-wrap items-center justify-between gap-3 mb-4 shrink-0"
               >
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-xs text-emerald-500 font-semibold">Ready to Publish</span>
+                {/* Model Selector Bar on Results Page */}
+                <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-card/70 backdrop-blur-md border border-border/70 shadow-sm">
+                  <button
+                    onClick={() => handleModelChangeInOutput("auto")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                      selectedModel === "auto"
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    }`}
+                    title="Auto Hybrid: Uses Groq Cloud with local Mistral fallback"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Auto</span>
+                  </button>
+                  <button
+                    onClick={() => handleModelChangeInOutput("groq")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                      selectedModel === "groq"
+                        ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    }`}
+                    title="Groq 120B: OpenAI GPT-OSS 120B on ultra-fast Groq LPU (~500 T/s)"
+                  >
+                    <Zap className="w-3 h-3" />
+                    <span>Groq 120B</span>
+                  </button>
+                  <button
+                    onClick={() => handleModelChangeInOutput("mistral")}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                      selectedModel === "mistral"
+                        ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    }`}
+                    title="Custom Mistral: Fine-tuned 7B GGUF deployed on HuggingFace"
+                  >
+                    <Brain className="w-3 h-3" />
+                    <span>Mistral 7B</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={onReset} className="h-9 gap-2 rounded-xl border-border bg-card/50 hover:bg-accent/50 transition-all duration-300">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onReset} 
+                    className="h-9 gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-200 active:scale-95"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="hidden sm:inline font-medium">New Prompt</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => onGenerate(inputScript)} className="h-9 gap-2 rounded-xl border-border bg-card/50 hover:bg-accent/50 transition-all duration-300">
-                    <RefreshCw className="w-3.5 h-3.5" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onGenerate(inputScript)} 
+                    className="h-9 gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-200 active:scale-95"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="hidden sm:inline font-medium">Refine</span>
                   </Button>
-                  <Button size="sm" onClick={copyAllMetadata} className="h-9 gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 font-semibold px-4">
+                  <Button 
+                    size="sm" 
+                    onClick={copyAllMetadata} 
+                    className="h-9 gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 font-semibold px-4 active:scale-95"
+                  >
                     {copiedField === "all" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>Copy All</span>
                   </Button>
@@ -672,7 +729,11 @@ function OutputPanel({ icon, label, children, delay = 0 }: { icon: React.ReactNo
 
 function CopyButton({ onClick, copied }: { onClick: () => void; copied: boolean }) {
   return (
-    <button onClick={onClick} className="flex-shrink-0 p-2.5 rounded-xl bg-secondary/80 border border-border/50 hover:bg-accent/30 hover:border-primary/30 transition-all duration-200 active:scale-95">
+    <button 
+      onClick={onClick} 
+      className="flex-shrink-0 p-2.5 rounded-xl bg-secondary/80 border border-border/60 hover:bg-secondary hover:border-primary/40 text-foreground transition-all duration-200 active:scale-95 shadow-xs"
+      title="Copy to clipboard"
+    >
       {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
     </button>
   );

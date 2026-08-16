@@ -29,6 +29,7 @@ export default function MetaGenPage() {
   const [selectedModel, setSelectedModel] = useState<ModelChoice>("auto");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isStatusHovered, setIsStatusHovered] = useState(false);
 
   const streamGen = useStreamGenerate();
   const pollGen = useGenerate({
@@ -51,12 +52,16 @@ export default function MetaGenPage() {
 
   const state = getAppState();
 
-  const handleGenerate = useCallback(async (script: string) => {
+  const handleGenerate = useCallback(async (script: string, overrideModel?: ModelChoice) => {
+    const targetModel = overrideModel || selectedModel;
+    if (overrideModel && overrideModel !== selectedModel) {
+      setSelectedModel(overrideModel);
+    }
     setInputScript(script);
     if (mode === "poll") {
-      pollGen.generate(script, selectedModel);
+      pollGen.generate(script, targetModel);
     } else {
-      streamGen.generate(script, selectedModel);
+      streamGen.generate(script, targetModel);
     }
   }, [mode, selectedModel, pollGen, streamGen]);
 
@@ -140,11 +145,7 @@ export default function MetaGenPage() {
 
   return (
     <div className="h-screen relative flex flex-col bg-background overflow-hidden selection:bg-primary/20">
-      <Header 
-        onHistoryToggle={() => setIsHistoryOpen(true)}
-        selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
-      />
+      <Header onHistoryToggle={() => setIsHistoryOpen(true)} />
 
       {/* Premium Ambient background effects - OPTIMIZED for LCP */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -161,30 +162,81 @@ export default function MetaGenPage() {
         />
       </div>
 
-      {/* Model & Runtime Status Badge Dock */}
-      <div className="fixed bottom-6 right-6 z-50 pointer-events-auto flex items-center gap-2">
-        <div 
-          className="backdrop-blur-md px-3 py-1.5 rounded-full border border-border/60 bg-card/80 font-mono text-[10px] font-bold uppercase tracking-wider shadow-lg text-foreground flex items-center gap-1.5"
-          title={`Active Engine: ${selectedModel === "groq" ? "Groq 120B Cloud" : selectedModel === "mistral" ? "Custom Mistral 7B" : "Auto Hybrid"}`}
-        >
-          <span className={`w-2 h-2 rounded-full animate-pulse ${
-            selectedModel === "groq" 
-              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" 
-              : selectedModel === "mistral" 
-              ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" 
-              : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-          }`} />
-          <span>
-            {selectedModel === "groq" ? "Groq 120B" : selectedModel === "mistral" ? "Mistral 7B (HF)" : "Auto Engine"}
-          </span>
-        </div>
+      {/* Redesigned Bottom-Left Model & Runtime Status Widget with Hover Card */}
+      <div 
+        className="fixed bottom-6 left-6 z-50 pointer-events-auto"
+        onMouseEnter={() => setIsStatusHovered(true)}
+        onMouseLeave={() => setIsStatusHovered(false)}
+      >
+        <div className="relative">
+          {/* Main Status Pill */}
+          <div 
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/80 backdrop-blur-xl border border-border/70 shadow-lg text-foreground cursor-pointer hover:border-primary/40 hover:bg-card transition-all duration-300 select-none"
+          >
+            <div className="relative flex items-center justify-center">
+              <span className={`w-2 h-2 rounded-full ${
+                warmupBadge.tone.includes("emerald") || warmupBadge.tone.includes("green")
+                  ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]"
+                  : warmupBadge.tone.includes("yellow") || warmupBadge.tone.includes("amber")
+                  ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]"
+                  : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]"
+              } animate-pulse`} />
+            </div>
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground/90">
+              {warmupBadge.text}
+            </span>
+            {mode === "poll" && !pollReady && (
+              <span className="text-[10px] text-rose-500 font-bold uppercase">Poll Offline</span>
+            )}
+          </div>
 
-        <div 
-          className={`backdrop-blur-md px-3 py-1.5 rounded-full border font-mono text-[10px] font-bold uppercase tracking-wider shadow-lg ${warmupBadge.tone}`}
-          title={warmupBadge.title}
-        >
-          {warmupBadge.text}
-          {mode === "poll" && !pollReady && <span className="ml-2 text-red-500 underline underline-offset-2">Poll Offline</span>}
+          {/* Expanded Detail Popover on Hover */}
+          <AnimatePresence>
+            {isStatusHovered && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="absolute bottom-full left-0 mb-2.5 w-72 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 p-3.5 shadow-2xl flex flex-col gap-2.5 z-50 text-foreground"
+              >
+                <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+                    <span className="text-xs font-bold text-foreground">Runtime Diagnostics</span>
+                  </div>
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                    SSE Active
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Inference Mode:</span>
+                    <span className="font-semibold text-foreground">{mode === "stream" ? "SSE Stream" : "Celery Poll"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Active Engine:</span>
+                    <span className="font-semibold text-primary">
+                      {selectedModel === "groq" ? "Groq 120B" : selectedModel === "mistral" ? "Mistral 7B (HF)" : "Auto Hybrid"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Model Status:</span>
+                    <span className="font-semibold text-emerald-500">{warmupBadge.text}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Keep-Warm Heartbeat:</span>
+                    <span className="font-semibold text-foreground/90">Enabled (Zero Cold-Start)</span>
+                  </div>
+                </div>
+
+                <div className="pt-1.5 border-t border-border/40 text-[9px] text-muted-foreground leading-tight">
+                  Dual-path inference engine with automated cloud-to-local fallback and streaming tokens.
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

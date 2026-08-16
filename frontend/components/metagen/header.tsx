@@ -1,52 +1,18 @@
 import { motion } from "framer-motion";
-import { History, Moon, Sun, Command, Zap, Brain, Sparkles, ChevronDown } from "lucide-react";
+import { History, Moon, Sun, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
-import type { ModelChoice } from "@/lib/types";
 
 interface HeaderProps {
   onHistoryToggle: () => void;
-  selectedModel: ModelChoice;
-  onModelChange: (model: ModelChoice) => void;
 }
 
-const MODEL_OPTIONS: { id: ModelChoice; label: string; shortLabel: string; icon: typeof Zap; desc: string; tone: string }[] = [
-  {
-    id: "auto",
-    label: "Auto Hybrid",
-    shortLabel: "Auto",
-    icon: Sparkles,
-    desc: "Lightning Cloud with Fallback",
-    tone: "text-amber-500 bg-amber-500/10 border-amber-500/30",
-  },
-  {
-    id: "groq",
-    label: "Groq 120B",
-    shortLabel: "Groq 120B",
-    icon: Zap,
-    desc: "OpenAI GPT-OSS 120B (LPU ~500 T/s)",
-    tone: "text-emerald-500 bg-emerald-500/10 border-emerald-500/30",
-  },
-  {
-    id: "mistral",
-    label: "Custom Mistral",
-    shortLabel: "Mistral 7B",
-    icon: Brain,
-    desc: "Custom Merged GGUF (HuggingFace)",
-    tone: "text-blue-500 bg-blue-500/10 border-blue-500/30",
-  },
-];
-
-export function Header({ onHistoryToggle, selectedModel, onModelChange }: HeaderProps) {
+export function Header({ onHistoryToggle }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
-
-  const activeOption = MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
-  const ActiveIcon = activeOption.icon;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/40 backdrop-blur-2xl border-b border-border/50 shadow-2xl">
@@ -95,88 +61,13 @@ export function Header({ onHistoryToggle, selectedModel, onModelChange }: Header
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-2 sm:gap-3"
         >
-          {/* Model Selector Dropdown & Active Indicator */}
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 hover:bg-accent/40 border border-border/60 hover:border-primary/40 text-foreground transition-all duration-200 shadow-sm"
-              title={`Active Model: ${activeOption.desc}`}
-            >
-              <div className={`flex items-center justify-center w-5 h-5 rounded-full ${activeOption.tone}`}>
-                <ActiveIcon className="w-3 h-3" />
-              </div>
-              <div className="flex flex-col text-left">
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] font-bold tracking-tight text-foreground">
-                    {activeOption.label}
-                  </span>
-                  <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </div>
-            </button>
-
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsDropdownOpen(false)} 
-                />
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-card/95 backdrop-blur-xl border border-border/80 p-2 shadow-2xl z-50 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-muted-foreground border-b border-border/40 mb-1">
-                    Select Inference Engine
-                  </div>
-                  {MODEL_OPTIONS.map((opt) => {
-                    const Icon = opt.icon;
-                    const isSelected = selectedModel === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => {
-                          onModelChange(opt.id);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={`flex items-start gap-2.5 p-2 rounded-xl text-left transition-all ${
-                          isSelected 
-                            ? "bg-primary/10 border border-primary/30 text-foreground" 
-                            : "hover:bg-accent/50 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <div className={`mt-0.5 p-1.5 rounded-lg border ${opt.tone}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
-                              {opt.label}
-                            </span>
-                            {isSelected && (
-                              <span className="text-[9px] font-black uppercase tracking-wider text-primary px-1.5 py-0.5 rounded-full bg-primary/15">
-                                Active
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground leading-tight truncate">
-                            {opt.desc}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="h-6 w-px bg-border hidden sm:block mx-0.5" />
-
           {/* Theme Toggle */}
           {mounted && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-xl hover:bg-accent/50 transition-colors duration-300 h-9 w-9"
+              className="rounded-xl hover:bg-secondary text-foreground transition-colors duration-300 h-9 w-9"
             >
               {theme === "dark" ? (
                 <Sun className="w-4 h-4 text-amber-400" />
@@ -190,9 +81,9 @@ export function Header({ onHistoryToggle, selectedModel, onModelChange }: Header
             variant="outline"
             size="sm"
             onClick={onHistoryToggle}
-            className="gap-2 rounded-xl border-border bg-card/50 hover:bg-accent/50 text-foreground transition-all duration-300 h-9"
+            className="gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-300 h-9 px-3"
           >
-            <History className="w-4 h-4" />
+            <History className="w-4 h-4 text-muted-foreground" />
             <span className="hidden sm:inline font-medium text-xs">History</span>
           </Button>
         </motion.div>
