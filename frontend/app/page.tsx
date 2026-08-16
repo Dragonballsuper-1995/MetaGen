@@ -147,17 +147,13 @@ export default function MetaGenPage() {
     <div className="h-screen relative flex flex-col bg-background overflow-hidden selection:bg-primary/20">
       <Header onHistoryToggle={() => setIsHistoryOpen(true)} />
 
-      {/* Premium Ambient background effects - OPTIMIZED for LCP */}
+      {/* Dot Matrix Background Pattern */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-dot-matrix opacity-60 dark:opacity-40" />
+      
+      {/* Structural Accent Glows (Technical, not cinematic) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute inset-0 bg-grid-white dark:bg-grid-white/[0.03] bg-grid-black/[0.01]" />
-        
-        {/* Static Optimized Radial Gradients instead of animating massive blurs */}
         <div
-          className={`absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-primary/20 blur-[80px] dark:bg-primary/10 transition-opacity duration-1000 ${state === 'loading' ? 'opacity-50' : 'opacity-20'}`}
-          style={{ willChange: 'opacity' }}
-        />
-        <div
-          className={`absolute top-[40%] -right-[20%] w-[70%] h-[70%] rounded-full bg-accent/20 blur-[80px] dark:bg-accent/10 transition-opacity duration-1000 ${state === 'loading' ? 'opacity-40' : 'opacity-15'}`}
+          className={`absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/5 to-transparent transition-opacity duration-700 ${state === 'loading' ? 'opacity-100' : 'opacity-0'}`}
           style={{ willChange: 'opacity' }}
         />
       </div>
@@ -171,10 +167,10 @@ export default function MetaGenPage() {
         <div className="relative">
           {/* Main Status Pill */}
           <div 
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card/80 backdrop-blur-xl border border-border/70 shadow-lg text-foreground cursor-pointer hover:border-primary/40 hover:bg-card transition-all duration-300 select-none"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-sm structural-panel text-foreground cursor-pointer hover:border-primary/50 transition-all duration-300 select-none group"
           >
             <div className="relative flex items-center justify-center">
-              <span className={`w-2 h-2 rounded-full ${
+              <span className={`w-2 h-2 rounded-[1px] ${
                 warmupBadge.tone.includes("emerald") || warmupBadge.tone.includes("green")
                   ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]"
                   : warmupBadge.tone.includes("yellow") || warmupBadge.tone.includes("amber")
@@ -198,7 +194,7 @@ export default function MetaGenPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute bottom-full left-0 mb-2.5 w-72 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 p-3.5 shadow-2xl flex flex-col gap-2.5 z-50 text-foreground"
+                className="absolute bottom-full left-0 mb-2.5 w-72 rounded-sm structural-panel p-3.5 flex flex-col gap-2.5 z-50 text-foreground font-mono"
               >
                 <div className="flex items-center justify-between border-b border-border/50 pb-2">
                   <div className="flex items-center gap-1.5">

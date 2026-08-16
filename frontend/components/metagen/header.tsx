@@ -16,7 +16,7 @@ export function Header({ onHistoryToggle }: HeaderProps) {
   useEffect(() => setMounted(true), []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/40 backdrop-blur-2xl border-b border-border/50 shadow-2xl">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b-2 border-border shadow-[0_4px_0_0_var(--border)] dark:shadow-[0_4px_0_0_var(--border)]">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
         {/* Custom MetaGen Dot Matrix Logo */}
         <motion.div
@@ -31,7 +31,7 @@ export function Header({ onHistoryToggle }: HeaderProps) {
             className="h-6 sm:h-7 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
           />
           <div className="flex items-center mt-1">
-            <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground font-bold leading-none hidden sm:inline-block border border-border/50 rounded-full px-2 py-0.5 ml-2 bg-muted/20">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-primary font-bold leading-none hidden sm:inline-block border-2 border-primary/30 rounded-sm px-2 py-0.5 ml-2 bg-primary/10">
               V2.5
             </span>
           </div>
@@ -45,15 +45,15 @@ export function Header({ onHistoryToggle }: HeaderProps) {
           {/* Theme Toggle */}
           {mounted && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-xl hover:bg-secondary text-foreground transition-colors duration-300 h-9 w-9"
+              className="rounded-sm transition-colors duration-300 h-10 w-10"
             >
               {theme === "dark" ? (
                 <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <Moon className="w-4 h-4 text-blue-600" />
+                <Moon className="w-4 h-4 text-primary" />
               )}
             </Button>
           )}
@@ -62,10 +62,10 @@ export function Header({ onHistoryToggle }: HeaderProps) {
             variant="outline"
             size="sm"
             onClick={onHistoryToggle}
-            className="gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-300 h-9 px-3"
+            className="gap-2 transition-all duration-300"
           >
-            <History className="w-4 h-4 text-muted-foreground" />
-            <span className="hidden sm:inline font-medium text-xs">History</span>
+            <History className="w-4 h-4 text-primary" />
+            <span className="hidden sm:inline">History</span>
           </Button>
         </motion.div>
       </div>

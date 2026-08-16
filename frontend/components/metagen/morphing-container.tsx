@@ -257,42 +257,42 @@ export function MorphingContainer({
               className="flex flex-col items-center justify-center px-4 w-full origin-bottom mb-4"
             >
               {/* Interactive Model Selector Pill Bar */}
-              <motion.div layout className="inline-flex items-center gap-1.5 p-1 rounded-full bg-secondary/80 border border-border/60 mb-4 shadow-sm">
+              <motion.div layout className="inline-flex items-center gap-1.5 p-1 rounded-sm bg-background border-2 border-border mb-4 shadow-[2px_2px_0_0_var(--border)]">
                 <button
                   onClick={() => onModelChange("auto")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                     selectedModel === "auto"
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                   title="Auto Hybrid: Uses Groq Cloud with local Mistral fallback"
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>Auto</span>
+                  <span>AUTO</span>
                 </button>
                 <button
                   onClick={() => onModelChange("groq")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                     selectedModel === "groq"
-                      ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-emerald-500 text-white"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                   title="Groq 120B: OpenAI GPT-OSS 120B on ultra-fast Groq LPU (~500 T/s)"
                 >
                   <Zap className="w-3 h-3" />
-                  <span>Groq 120B</span>
+                  <span>GROQ_120B</span>
                 </button>
                 <button
                   onClick={() => onModelChange("mistral")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                     selectedModel === "mistral"
-                      ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-blue-500 text-white"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   }`}
                   title="Custom Mistral: Fine-tuned 7B GGUF deployed on HuggingFace"
                 >
                   <Brain className="w-3 h-3" />
-                  <span>Mistral 7B</span>
+                  <span>MISTRAL_7B</span>
                 </button>
               </motion.div>
 
@@ -348,11 +348,7 @@ export function MorphingContainer({
             >
               <motion.div
                 layout
-                className="relative glass-panel rounded-[2rem] overflow-hidden flex flex-col z-10"
-                style={{ borderColor: isFocused ? 'var(--primary)' : 'var(--border)' }}
-                animate={{
-                  boxShadow: isPromptExpanded ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
-                }}
+                className={`relative flex flex-col z-10 border-2 rounded-sm transition-all duration-300 ${isFocused ? 'border-primary shadow-[4px_4px_0_0_var(--primary)]' : 'border-border shadow-[4px_4px_0_0_var(--border)]'} bg-background`}
               >
                 {/* Header (Only visible when expanded) */}
                 <AnimatePresence>
@@ -383,7 +379,7 @@ export function MorphingContainer({
                             e.preventDefault(); 
                             fileInputRef.current?.click(); 
                           }} 
-                          className="h-7 gap-1.5 px-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/10 transition-all duration-300"
+                          className="h-8 gap-1.5 px-2 rounded-sm bg-primary/10 hover:bg-primary/20 text-primary border-2 border-primary/20 transition-all duration-300"
                         >
                           <Upload className="w-3 h-3" />
                           <span className="text-[9px] font-black uppercase tracking-widest">Upload</span>
@@ -401,7 +397,7 @@ export function MorphingContainer({
                   className="relative overflow-hidden flex flex-col w-full"
                 >
                   <AnimatePresence mode="wait">
-                    <motion.div key={sampleVersion} {...ACTIVE_TRANSITION} className="h-full flex flex-col w-full">
+                    <motion.div key={sampleVersion} {...ACTIVE_TRANSITION} className="h-full flex flex-col w-full bg-background/50">
                       <textarea
                         ref={textareaRef}
                         value={script}
@@ -409,8 +405,8 @@ export function MorphingContainer({
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                         style={{ overflowY: isPromptExpanded && contentHeight >= 350 ? 'auto' : 'hidden' }}
-                        placeholder={isPromptExpanded ? "Describe your video or paste script here..." : "Paste script or click for samples..."}
-                        className="w-full h-full p-5 md:px-6 bg-transparent text-foreground placeholder:text-muted-foreground/50 resize-none focus:outline-none text-base leading-relaxed custom-scrollbar"
+                        placeholder={isPromptExpanded ? "DESCRIBE VIDEO OR PASTE SCRIPT..." : "PASTE SCRIPT OR CLICK FOR SAMPLES..."}
+                        className="w-full h-full p-5 md:px-6 bg-transparent text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none text-sm font-mono leading-relaxed custom-scrollbar uppercase"
                       />
                     </motion.div>
                   </AnimatePresence>
@@ -427,19 +423,19 @@ export function MorphingContainer({
                       className="px-5 pb-5 shrink-0 flex flex-col gap-4"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground font-mono uppercase tracking-widest">
                           <Clock className="w-3 h-3" />
-                          {script.length} / 10000
+                          {script.length} / 10000 BYTES
                         </div>
                       </div>
                       
                       <Button
                         onClick={handleSubmit}
                         disabled={!script.trim()}
-                        className="w-full group relative gap-2 rounded-2xl h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 transition-all duration-300 font-bold text-base"
+                        className="w-full group relative gap-2 rounded-sm h-12 text-sm"
                       >
                         <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                        Generate Metadata
+                        INITIATE SEQUENCE
                       </Button>
                     </motion.div>
                   )}
@@ -448,8 +444,8 @@ export function MorphingContainer({
                 {/* Collapsed Button */}
                 <AnimatePresence>
                   {!isPromptExpanded && (
-                    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-3 top-3">
-                      <Button onClick={() => setIsPromptExpanded(true)} size="sm" className="rounded-xl h-10 w-10 p-0 bg-primary shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-transform">
+                    <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute right-3 top-2.5">
+                      <Button onClick={() => setIsPromptExpanded(true)} size="sm" className="rounded-sm h-10 w-10 p-0 hover:scale-[1.03] active:scale-95 transition-transform">
                         <Play className="w-4 h-4 ml-0.5" />
                       </Button>
                     </motion.div>
@@ -480,42 +476,42 @@ export function MorphingContainer({
                 className="flex flex-wrap items-center justify-between gap-3 mb-4 shrink-0"
               >
                 {/* Model Selector Bar on Results Page */}
-                <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-card/70 backdrop-blur-md border border-border/70 shadow-sm">
+                <div className="inline-flex items-center gap-1.5 p-1 rounded-sm bg-background border-2 border-border shadow-[2px_2px_0_0_var(--border)]">
                   <button
                     onClick={() => handleModelChangeInOutput("auto")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                       selectedModel === "auto"
-                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                     title="Auto Hybrid: Uses Groq Cloud with local Mistral fallback"
                   >
                     <Sparkles className="w-3 h-3" />
-                    <span>Auto</span>
+                    <span>AUTO</span>
                   </button>
                   <button
                     onClick={() => handleModelChangeInOutput("groq")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                       selectedModel === "groq"
-                        ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                        ? "bg-emerald-500 text-white"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                     title="Groq 120B: OpenAI GPT-OSS 120B on ultra-fast Groq LPU (~500 T/s)"
                   >
                     <Zap className="w-3 h-3" />
-                    <span>Groq 120B</span>
+                    <span>GROQ_120B</span>
                   </button>
                   <button
                     onClick={() => handleModelChangeInOutput("mistral")}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-sm text-[11px] font-bold font-mono transition-all duration-200 ${
                       selectedModel === "mistral"
-                        ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                        ? "bg-blue-500 text-white"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                     }`}
                     title="Custom Mistral: Fine-tuned 7B GGUF deployed on HuggingFace"
                   >
                     <Brain className="w-3 h-3" />
-                    <span>Mistral 7B</span>
+                    <span>MISTRAL_7B</span>
                   </button>
                 </div>
 
@@ -524,27 +520,27 @@ export function MorphingContainer({
                     variant="outline" 
                     size="sm" 
                     onClick={onReset} 
-                    className="h-9 gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-200 active:scale-95"
+                    className="h-10 gap-2 text-[10px]"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="hidden sm:inline font-medium">New Prompt</span>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">NEW_PROMPT</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => onGenerate(inputScript)} 
-                    className="h-9 gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-200 active:scale-95"
+                    className="h-10 gap-2 text-[10px]"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="hidden sm:inline font-medium">Refine</span>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">REFINE</span>
                   </Button>
                   <Button 
                     size="sm" 
                     onClick={copyAllMetadata} 
-                    className="h-9 gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 font-semibold px-4 active:scale-95"
+                    className="h-10 gap-2 px-4 text-[10px]"
                   >
                     {copiedField === "all" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>Copy All</span>
+                    <span>COPY_ALL</span>
                   </Button>
                 </div>
               </motion.div>
@@ -553,11 +549,11 @@ export function MorphingContainer({
             <div className="grid gap-4 md:gap-6 flex-1 min-h-0 grid-cols-1 lg:grid-cols-12">
               {/* Output State Input Reference */}
               <div className="lg:col-span-4 h-full relative min-h-0">
-                <div className="relative glass-panel rounded-[2rem] overflow-hidden h-full flex flex-col z-10 border-border/50">
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 bg-muted/30 shrink-0">
+                <div className="relative border-2 border-border/50 bg-background/50 rounded-sm overflow-hidden h-full flex flex-col z-10">
+                  <div className="flex items-center justify-between px-5 py-3 border-b-2 border-border/40 bg-muted/30 shrink-0">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <FileText className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Source Script</span>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Source Script</span>
                     </div>
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -645,7 +641,7 @@ export function MorphingContainer({
                 )}
                 
                 {isOutputState && result && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center justify-center gap-6 px-5 py-3 glass-panel rounded-2xl shrink-0 border-border/50 mt-auto">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center justify-center gap-6 px-5 py-3 structural-panel rounded-sm shrink-0 mt-auto">
                     {result.seo_score !== undefined && (
                       <div className="flex items-center gap-2 pr-6 border-r border-border/30">
                         <div className="relative flex items-center justify-center">
@@ -685,11 +681,10 @@ function AnimatedResultText({ text, className }: { text: string; className?: str
       {words.map((word, i) => (
         <motion.span
           key={i}
-          initial={{ filter: "blur(8px)", opacity: 0, scale: 0.95, color: "var(--primary)" }}
-          animate={{ filter: "blur(0px)", opacity: 1, scale: 1, color: "inherit" }}
-          transition={{ duration: 0.5, delay: Math.random() * 0.4, ease: [0.23, 1, 0.32, 1] }}
+          initial={{ opacity: 0, backgroundColor: "var(--primary)", color: "var(--background)" }}
+          animate={{ opacity: 1, backgroundColor: "transparent", color: "inherit" }}
+          transition={{ duration: 0.15, delay: Math.random() * 0.5, ease: "steps(2)" }}
           className="inline-block"
-          style={{ willChange: "transform, opacity, filter" }}
         >
           {word}
         </motion.span>
@@ -699,17 +694,29 @@ function AnimatedResultText({ text, className }: { text: string; className?: str
 }
 
 function LoadingIndicator() {
+  const [dots, setDots] = useState("");
+  useEffect(() => {
+    const interval = setInterval(() => setDots(d => d.length >= 3 ? "" : d + "."), 400);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-center text-center px-6 h-full">
-      <motion.div animate={{ rotate: 360, scale: [1, 1.1, 1] }} transition={{ rotate: { duration: 4, repeat: Infinity, ease: "linear" }, scale: { duration: 2, repeat: Infinity, ease: "easeInOut" } }} className="w-20 h-20 rounded-[2.5rem] bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 shadow-2xl shadow-primary/20">
-        <Brain className="w-10 h-10 text-primary" />
-      </motion.div>
-      <h3 className="text-2xl font-black text-foreground mb-2 tracking-tight">Synthesizing Metadata</h3>
-      <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">Our AI is analyzing your narrative structure to craft optimal hooks...</p>
-      <div className="mt-8 flex items-center gap-1.5">
-        {[0, 1, 2].map((i) => (
-          <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }} transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} className="w-1.5 h-1.5 rounded-full bg-primary" />
-        ))}
+    <div className="flex flex-col items-center justify-center text-center px-6 h-full font-mono">
+      <div className="w-16 h-16 rounded-sm bg-primary/10 border-2 border-primary/40 flex items-center justify-center mb-6 overflow-hidden relative shadow-[0_0_15px_rgba(0,132,255,0.2)]">
+        <motion.div 
+          animate={{ top: ["-10%", "110%"] }} 
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} 
+          className="absolute w-full h-[2px] bg-primary/80 shadow-[0_0_10px_rgba(0,132,255,1)]" 
+        />
+        <Cpu className="w-8 h-8 text-primary" />
+      </div>
+      <h3 className="text-sm font-bold text-primary mb-3 uppercase tracking-widest">
+        PROCESSING_DATA_STREAM{dots}
+      </h3>
+      <div className="text-[10px] text-muted-foreground/80 leading-loose uppercase flex flex-col items-start text-left bg-background/50 p-3 border border-border/40 rounded-sm w-64">
+        <span>> EXTRACTING_ENTITIES...</span>
+        <span>> ANALYZING_NARRATIVE_ARC...</span>
+        <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>> GENERATING_OUTPUT...</motion.span>
       </div>
     </div>
   );
@@ -717,10 +724,10 @@ function LoadingIndicator() {
 
 function OutputPanel({ icon, label, children, delay = 0 }: { icon: React.ReactNode; label: string; children: React.ReactNode; delay?: number }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4 }} className="glass-panel rounded-3xl overflow-hidden shrink-0 border-border/50">
-      <div className="flex items-center gap-2 px-5 py-2.5 border-b border-border/30 bg-muted/20">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.3 }} className="structural-panel rounded-sm overflow-hidden shrink-0">
+      <div className="flex items-center gap-2 px-5 py-2.5 border-b-2 border-border bg-muted/20">
         <div className="text-primary">{icon}</div>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{label}</span>
+        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
       </div>
       <div className="p-5">{children}</div>
     </motion.div>
@@ -731,20 +738,20 @@ function CopyButton({ onClick, copied }: { onClick: () => void; copied: boolean 
   return (
     <button 
       onClick={onClick} 
-      className="flex-shrink-0 p-2.5 rounded-xl bg-secondary/80 border border-border/60 hover:bg-secondary hover:border-primary/40 text-foreground transition-all duration-200 active:scale-95 shadow-xs"
+      className="flex-shrink-0 p-2.5 rounded-sm bg-secondary/80 border-2 border-transparent hover:bg-primary/10 hover:border-primary/40 hover:text-primary text-foreground transition-all duration-200 active:scale-95"
       title="Copy to clipboard"
     >
-      {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
+      {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
     </button>
   );
 }
 
 function TelemetryItem({ icon, label, value, valueClassName = "" }: { icon: React.ReactNode; label: string; value: string; valueClassName?: string }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2">
+    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 font-mono">
       <span className="text-primary">{icon}</span>
-      <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{label}:</span>
-      <span className={`text-[10px] font-black uppercase tracking-wider text-foreground ${valueClassName}`}>{value}</span>
+      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}:</span>
+      <span className={`text-[9px] font-bold uppercase tracking-widest text-foreground ${valueClassName}`}>{value}</span>
     </motion.div>
   );
 }
@@ -757,15 +764,15 @@ function SeoScoreItem({ icon, label, score }: { icon: React.ReactNode; label: st
   };
 
   return (
-    <div className="flex flex-col gap-1.5 p-3 rounded-2xl bg-muted/20 border border-border/30">
+    <div className="flex flex-col gap-1.5 p-3 rounded-sm bg-background border-2 border-border/50 structural-panel">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           {icon}
-          <span className="text-[9px] font-black uppercase tracking-wider">{label}</span>
+          <span className="text-[9px] font-mono font-bold uppercase tracking-widest">{label}</span>
         </div>
-        <span className={`text-[11px] font-black ${getTone(score)}`}>{score}%</span>
+        <span className={`text-[11px] font-mono font-bold ${getTone(score)}`}>{score}%</span>
       </div>
-      <div className="h-1 w-full bg-muted-foreground/10 rounded-full overflow-hidden">
+      <div className="h-1.5 w-full bg-border rounded-sm overflow-hidden">
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${score}%` }}
