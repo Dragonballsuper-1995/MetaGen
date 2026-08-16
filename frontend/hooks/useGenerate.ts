@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { submitGeneration, pollStatus } from "@/lib/api";
 import { POLL_INTERVAL } from "@/lib/constants";
-import type { GenerationStatus, MetadataResult } from "@/lib/types";
+import type { GenerationStatus, MetadataResult, ModelChoice } from "@/lib/types";
 
 interface UseGenerateOptions {
   onPollUnavailable?: (text: string, reason: string) => void;
@@ -36,7 +36,7 @@ export function useGenerate(options: UseGenerateOptions = {}) {
   }, [cleanup]);
 
   const generate = useCallback(
-    async (text: string) => {
+    async (text: string, model: ModelChoice = "auto") => {
       cleanup();
       setStatus("loading");
       setResult(null);
@@ -45,7 +45,7 @@ export function useGenerate(options: UseGenerateOptions = {}) {
       startRef.current = Date.now();
 
       try {
-        const { task_id } = await submitGeneration(text);
+        const { task_id } = await submitGeneration(text, model);
 
         intervalRef.current = setInterval(async () => {
           try {
@@ -102,6 +102,9 @@ export function useGenerate(options: UseGenerateOptions = {}) {
       title: historyItem.title,
       description: historyItem.description,
       tags: historyItem.tags,
+      seo_score: historyItem.seo_score,
+      seo_breakdown: historyItem.seo_breakdown,
+      model: historyItem.model,
     });
     setError(null);
     setGenerationTime(null);

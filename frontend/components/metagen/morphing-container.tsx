@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AppState, GenerationResult } from "@/app/page";
+import type { ModelChoice } from "@/lib/types";
 
 interface MorphingContainerProps {
   state: AppState;
@@ -37,6 +38,8 @@ interface MorphingContainerProps {
   onInputChange: (script: string) => void;
   streamTokens?: string;
   streamTags?: string[] | null;
+  selectedModel: ModelChoice;
+  onModelChange: (model: ModelChoice) => void;
 }
 
 const SAMPLE_SCRIPTS = [
@@ -87,6 +90,8 @@ export function MorphingContainer({
   onInputChange,
   streamTokens = "",
   streamTags = null,
+  selectedModel,
+  onModelChange,
 }: MorphingContainerProps) {
   const [script, setScript] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -243,9 +248,44 @@ export function MorphingContainer({
               transition={SPRING_CONFIG}
               className="flex flex-col items-center justify-center px-4 w-full origin-bottom mb-4"
             >
-              <motion.div layout className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Mistral 7B Turbo</span>
+              {/* Interactive Model Selector Pill Bar */}
+              <motion.div layout className="inline-flex items-center gap-1.5 p-1 rounded-full bg-secondary/80 border border-border/60 mb-4 shadow-sm">
+                <button
+                  onClick={() => onModelChange("auto")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    selectedModel === "auto"
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Auto Hybrid: Uses Groq Cloud with local Mistral fallback"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Auto</span>
+                </button>
+                <button
+                  onClick={() => onModelChange("groq")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    selectedModel === "groq"
+                      ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Groq 120B: OpenAI GPT-OSS 120B on ultra-fast Groq LPU (~500 T/s)"
+                >
+                  <Zap className="w-3 h-3" />
+                  <span>Groq 120B</span>
+                </button>
+                <button
+                  onClick={() => onModelChange("mistral")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                    selectedModel === "mistral"
+                      ? "bg-blue-500 text-white shadow-sm shadow-blue-500/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Custom Mistral: Fine-tuned 7B GGUF deployed on HuggingFace"
+                >
+                  <Brain className="w-3 h-3" />
+                  <span>Mistral 7B</span>
+                </button>
               </motion.div>
 
               <motion.h2 layout className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-3 text-center text-balance">

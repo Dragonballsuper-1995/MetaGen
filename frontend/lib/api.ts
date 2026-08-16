@@ -5,6 +5,7 @@ import type {
   DepsHealthResponse,
   WarmupHealthResponse,
   TitleVariantsResponse,
+  ModelChoice,
 } from "./types";
 
 export function getHeaders(): Record<string, string> {
@@ -15,12 +16,12 @@ export function getHeaders(): Record<string, string> {
 }
 
 /** POST /api/generate — submit script for background processing. */
-export async function submitGeneration(text: string): Promise<TaskResponse> {
+export async function submitGeneration(text: string, model: ModelChoice = "auto"): Promise<TaskResponse> {
   const base = (await resolveApiUrl().catch(() => API_URL_FALLBACK));
   const res = await fetch(`${base}/api/generate`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, model }),
   });
 
   if (!res.ok) {
@@ -73,12 +74,13 @@ export async function getTitleVariants(
   text: string,
   baseTitle: string,
   count = 2,
+  model: ModelChoice = "auto",
 ): Promise<string[]> {
   const base = (await resolveApiUrl().catch(() => API_URL_FALLBACK));
   const res = await fetch(`${base}/api/title-variants`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ text, base_title: baseTitle, count }),
+    body: JSON.stringify({ text, base_title: baseTitle, count, model }),
   });
 
   if (!res.ok) {

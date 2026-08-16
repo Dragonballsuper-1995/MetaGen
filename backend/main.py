@@ -158,12 +158,14 @@ app.add_middleware(
 
 class VideoRequest(BaseModel):
     text: str = Field(..., min_length=20, max_length=3000)
+    model: str = Field(default="auto", description="Model choice: 'auto', 'groq', or 'mistral'")
 
 
 class TitleVariantsRequest(BaseModel):
     text: str = Field(..., min_length=20, max_length=3000)
     base_title: str = Field(..., min_length=5, max_length=120)
     count: int = Field(default=2, ge=1, le=5)
+    model: str = Field(default="auto", description="Model choice: 'auto', 'groq', or 'mistral'")
 
 
 class TaskResponse(BaseModel):
@@ -185,6 +187,7 @@ class MetadataResult(BaseModel):
     tags: list[str] = Field(..., min_length=5, max_length=8)
     seo_score: float | None = Field(default=None, ge=0, le=100)
     seo_breakdown: SeoBreakdown | None = None
+    model: str | None = Field(default=None, description="Active AI model used for generation")
 
     @field_validator("tags")
     @classmethod
@@ -340,9 +343,9 @@ async def dependency_health_check():
 @app.post("/api/generate", response_model=TaskResponse, dependencies=[Depends(verify_api_key)])
 @limiter.limit(settings.rate_limit)
 async def start_generation(request: Request, req: VideoRequest):
-    logger.info("New generation request (%d chars)", len(req.text))
+    logger.info("New generation request (%d chars, model=%s)", len(req.text), req.model)
     try:
-        task = process_video_text.delay(req.text)
+        task = process_video_text.delay(req.text, model_choice=req.model)
         return TaskResponse(task_id=task.id)
     except Exception as exc:
         logger.error("Poll mode unavailable (Celery/Redis): %s", exc, exc_info=True)
@@ -405,7 +408,7 @@ async def stream_generation(request: Request, req: VideoRequest):
         from backend.ai_engine import ScriptValidationError, generate_youtube_metadata_stream
 
         try:
-            stream = generate_youtube_metadata_stream(req.text)
+            stream = generate_youtube_metadata_stream(req.text, model_choice=req.model)
             try:
                 for event in stream:
                     if await request.is_disconnected():
@@ -450,7 +453,7 @@ async def generate_title_variants(request: Request, req: TitleVariantsRequest):
 
     try:
         await _ensure_model_warm(app)
-        titles = build_title_variants(req.text, req.base_title, req.count)
+        titles = build_title_variants(req.text, req.base_title, req.count, model_choice=req.model)
         return TitleVariantsResponse(titles=titles)
     except ScriptValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

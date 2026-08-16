@@ -35,16 +35,16 @@ celery_app.conf.update(
     max_retries=2,
     default_retry_delay=5,
 )
-def process_video_text(self, script_text: str) -> dict:
+def process_video_text(self, script_text: str, model_choice: str = "auto") -> dict:
     """
     Background task that runs the AI engine.
     """
     from backend.ai_engine import generate_youtube_metadata
 
-    logger.info("Task %s: starting generation", self.request.id)
+    logger.info("Task %s: starting generation (model=%s)", self.request.id, model_choice)
 
     try:
-        result = generate_youtube_metadata(script_text)
+        result = generate_youtube_metadata(script_text, model_choice=model_choice)
         logger.info("Task %s: completed successfully", self.request.id)
         return result
     except Exception as exc:

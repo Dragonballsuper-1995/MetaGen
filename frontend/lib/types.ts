@@ -2,8 +2,11 @@
 // API schemas (mirrors FastAPI Pydantic models in main.py)
 // ---------------------------------------------------------------------------
 
+export type ModelChoice = "auto" | "groq" | "mistral";
+
 export interface VideoRequest {
   text: string;
+  model?: ModelChoice;
 }
 
 export interface TaskResponse {
@@ -25,6 +28,7 @@ export interface MetadataResult {
   tags: string[];
   seo_score?: number;
   seo_breakdown?: SeoBreakdown;
+  model?: string;
 }
 
 export interface HistoryItem {
@@ -37,6 +41,7 @@ export interface HistoryItem {
   latency?: number;
   seo_score?: number;
   seo_breakdown?: SeoBreakdown;
+  model?: string;
 }
 
 export interface TitleVariantsResponse {
@@ -121,4 +126,6 @@ export interface LayoutProps {
   pollReady: boolean | null;
   theme: ThemeMode;
   onThemeChange: (theme: ThemeMode) => void;
+  selectedModel: ModelChoice;
+  onModelChange: (model: ModelChoice) => void;
 }

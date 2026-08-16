@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { API_URL_FALLBACK, resolveApiUrl } from "@/lib/constants";
 import { getHeaders } from "@/lib/api";
-import type { GenerationStatus, HistoryItem, MetadataResult, StreamEvent } from "@/lib/types";
+import type { GenerationStatus, HistoryItem, MetadataResult, ModelChoice, StreamEvent } from "@/lib/types";
 import { useStreamParser } from "@/hooks/useStreamParser";
 
 const FIRST_STREAM_ACTIVITY_TIMEOUT_MS = 20_000;
@@ -45,7 +45,7 @@ export function useStreamGenerate() {
   }, []);
 
   const generate = useCallback(
-    async (text: string) => {
+    async (text: string, model: ModelChoice = "auto") => {
       // Reset first
       if (abortRef.current) abortRef.current.abort();
       setStatus("streaming");
@@ -77,7 +77,7 @@ export function useStreamGenerate() {
             const response = await fetch(`${base}/api/generate/stream`, {
               method: "POST",
               headers,
-              body: JSON.stringify({ text }),
+              body: JSON.stringify({ text, model }),
               signal: attemptController.signal,
             });
 
@@ -201,6 +201,9 @@ export function useStreamGenerate() {
       title: historyItem.title,
       description: historyItem.description,
       tags: historyItem.tags,
+      seo_score: historyItem.seo_score,
+      seo_breakdown: historyItem.seo_breakdown,
+      model: historyItem.model,
     });
     setError(null);
     setGenerationTime(null);

@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getTitleVariants } from "@/lib/api";
-import type { GenerationStatus } from "@/lib/types";
+import type { GenerationStatus, ModelChoice } from "@/lib/types";
 
-export function useTitleVariants(generationStatus: GenerationStatus, generatedTitle?: string) {
+export function useTitleVariants(
+  generationStatus: GenerationStatus,
+  generatedTitle?: string,
+  modelChoice: ModelChoice = "auto",
+) {
   const [generatedScript, setGeneratedScript] = useState("");
   const [titleVariants, setTitleVariants] = useState<string[]>([]);
   const variantCacheRef = useRef<Map<string, string[]>>(new Map());
@@ -31,7 +35,7 @@ export function useTitleVariants(generationStatus: GenerationStatus, generatedTi
         return;
       }
 
-      const cacheKey = `${baseTitle.toLowerCase()}::${sourceScript.toLowerCase()}`;
+      const cacheKey = `${baseTitle.toLowerCase()}::${sourceScript.toLowerCase()}::${modelChoice}`;
       const cached = variantCacheRef.current.get(cacheKey);
       if (cached) {
         if (!cancelled) {
@@ -41,7 +45,7 @@ export function useTitleVariants(generationStatus: GenerationStatus, generatedTi
       }
 
       try {
-        const variants = await getTitleVariants(sourceScript, baseTitle, 2);
+        const variants = await getTitleVariants(sourceScript, baseTitle, 2, modelChoice);
         if (cancelled) {
           return;
         }
@@ -65,7 +69,7 @@ export function useTitleVariants(generationStatus: GenerationStatus, generatedTi
     return () => {
       cancelled = true;
     };
-  }, [generationStatus, generatedScript, generatedTitle, dedupeVariantTitles]);
+  }, [generationStatus, generatedScript, generatedTitle, modelChoice, dedupeVariantTitles]);
 
   const beginGeneration = useCallback((script: string) => {
     setGeneratedScript(script);

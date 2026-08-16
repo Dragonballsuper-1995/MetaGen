@@ -8,7 +8,7 @@ import { Header } from "@/components/metagen/header";
 import { useGenerate } from "@/hooks/useGenerate";
 import { useStreamGenerate } from "@/hooks/useStreamGenerate";
 import { useWarmupAndDepsHealth } from "@/hooks/useWarmupAndDepsHealth";
-import type { GenerationMode, MetadataResult } from "@/lib/types";
+import type { GenerationMode, MetadataResult, ModelChoice } from "@/lib/types";
 
 export type AppState = "input" | "loading" | "output";
 
@@ -26,6 +26,7 @@ export interface HistoryItem extends GenerationResult {
 export default function MetaGenPage() {
   const [inputScript, setInputScript] = useState("");
   const [mode, setMode] = useState<GenerationMode>("stream");
+  const [selectedModel, setSelectedModel] = useState<ModelChoice>("auto");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -33,7 +34,7 @@ export default function MetaGenPage() {
   const pollGen = useGenerate({
     onPollUnavailable: (inputText) => {
       setMode("stream");
-      streamGen.generate(inputText);
+      streamGen.generate(inputText, selectedModel);
     },
   });
 
@@ -53,11 +54,19 @@ export default function MetaGenPage() {
   const handleGenerate = useCallback(async (script: string) => {
     setInputScript(script);
     if (mode === "poll") {
-      pollGen.generate(script);
+      pollGen.generate(script, selectedModel);
     } else {
-      streamGen.generate(script);
+      streamGen.generate(script, selectedModel);
     }
-  }, [mode, pollGen, streamGen]);
+  }, [mode, selectedModel, pollGen, streamGen]);
+
+  // Resolve model name display
+  const resolveModelName = useCallback((explicitModel?: string): string => {
+    if (explicitModel && explicitModel.trim()) return explicitModel;
+    if (selectedModel === "groq") return "OpenAI GPT-OSS 120B (Groq)";
+    if (selectedModel === "mistral") return "Mistral 7B (Custom HF)";
+    return "OpenAI GPT-OSS 120B (Groq)";
+  }, [selectedModel]);
 
   // Sync result to history when completed
   useEffect(() => {
@@ -65,7 +74,7 @@ export default function MetaGenPage() {
       const historyItem: HistoryItem = {
         ...gen.result,
         latency: gen.generationTime ? parseFloat(gen.generationTime.toFixed(2)) : 0,
-        model: "Mistral 7B Turbo",
+        model: resolveModelName(gen.result.model),
         timestamp: new Date(),
         inputScript: inputScript,
         id: crypto.randomUUID(),
@@ -79,7 +88,7 @@ export default function MetaGenPage() {
         return [historyItem, ...prev].slice(0, 20);
       });
     }
-  }, [gen.status, gen.result, gen.generationTime, inputScript]);
+  }, [gen.status, gen.result, gen.generationTime, inputScript, resolveModelName]);
 
   const handleRegenerate = useCallback(() => {
     if (inputScript) {
@@ -100,19 +109,20 @@ export default function MetaGenPage() {
       tags: item.tags,
       seo_score: item.seo_score,
       seo_breakdown: item.seo_breakdown,
+      model: item.model,
     };
 
     if (mode === "poll") {
       pollGen.restore({
         ...restoreData,
         id: "restored",
-        script: item.inputScript
+        script: item.inputScript,
       });
     } else {
       streamGen.restore({
         ...restoreData,
         id: "restored",
-        script: item.inputScript
+        script: item.inputScript,
       });
     }
     setInputScript(item.inputScript);
@@ -123,14 +133,18 @@ export default function MetaGenPage() {
   const uiResult: GenerationResult | null = gen.result ? {
     ...gen.result,
     latency: gen.generationTime ? parseFloat(gen.generationTime.toFixed(2)) : 0,
-    model: "Mistral 7B Turbo",
+    model: resolveModelName(gen.result.model),
     timestamp: new Date(),
     inputScript: inputScript,
   } : null;
 
   return (
     <div className="h-screen relative flex flex-col bg-background overflow-hidden selection:bg-primary/20">
-      <Header onHistoryToggle={() => setIsHistoryOpen(true)} />
+      <Header 
+        onHistoryToggle={() => setIsHistoryOpen(true)}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+      />
 
       {/* Premium Ambient background effects - OPTIMIZED for LCP */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -147,8 +161,24 @@ export default function MetaGenPage() {
         />
       </div>
 
-      {/* Model Status Badge */}
-      <div className="fixed bottom-6 right-6 z-50 pointer-events-auto">
+      {/* Model & Runtime Status Badge Dock */}
+      <div className="fixed bottom-6 right-6 z-50 pointer-events-auto flex items-center gap-2">
+        <div 
+          className="backdrop-blur-md px-3 py-1.5 rounded-full border border-border/60 bg-card/80 font-mono text-[10px] font-bold uppercase tracking-wider shadow-lg text-foreground flex items-center gap-1.5"
+          title={`Active Engine: ${selectedModel === "groq" ? "Groq 120B Cloud" : selectedModel === "mistral" ? "Custom Mistral 7B" : "Auto Hybrid"}`}
+        >
+          <span className={`w-2 h-2 rounded-full animate-pulse ${
+            selectedModel === "groq" 
+              ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" 
+              : selectedModel === "mistral" 
+              ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" 
+              : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+          }`} />
+          <span>
+            {selectedModel === "groq" ? "Groq 120B" : selectedModel === "mistral" ? "Mistral 7B (HF)" : "Auto Engine"}
+          </span>
+        </div>
+
         <div 
           className={`backdrop-blur-md px-3 py-1.5 rounded-full border font-mono text-[10px] font-bold uppercase tracking-wider shadow-lg ${warmupBadge.tone}`}
           title={warmupBadge.title}
@@ -172,6 +202,8 @@ export default function MetaGenPage() {
               onInputChange={setInputScript}
               streamTokens={mode === "stream" ? streamGen.tokens : ""}
               streamTags={mode === "stream" ? streamGen.earlyTags : null}
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
             />
           </LayoutGroup>
         </div>

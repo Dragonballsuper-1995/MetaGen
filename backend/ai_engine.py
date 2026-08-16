@@ -1776,17 +1776,36 @@ def _cap_prompt_chars(prepped_input: str, max_chars: int) -> str:
     )
 
 
+_last_used_model_name: str = "OpenAI GPT-OSS 120B (Groq)"
+
+
+def _normalize_model_choice(model_choice: str | None) -> str:
+    choice = (model_choice or "auto").strip().lower()
+    if choice in ("mistral", "custom", "hf", "huggingface", "local"):
+        return "mistral"
+    if choice in ("groq", "openai/gpt-oss-120b", "cloud"):
+        return "groq"
+    return "auto"
+
+
+def get_last_used_model_name() -> str:
+    return _last_used_model_name
+
+
 def _llm_call(
     system_prompt: str,
     user_msg: str,
     max_tokens: int,
     temperature: float | None = None,
+    model_choice: str = "auto",
 ) -> dict:
-    """Single non-streaming LLM call → parsed JSON dict. Prioritizes Groq."""
+    """Single non-streaming LLM call → parsed JSON dict. Respects model_choice."""
+    global _last_used_model_name
     settings = _get_settings()
     groq = _get_groq_client()
+    normalized_choice = _normalize_model_choice(model_choice)
 
-    if groq:
+    if normalized_choice in ("auto", "groq") and groq:
         try:
             inference_start = perf_counter()
             groq_system_prompt = system_prompt + "\n\nYou are a strict API. Output ONLY valid JSON. Do NOT wrap the JSON in markdown formatting (e.g., no ```json). Do NOT add conversational text. Output the raw JSON object directly."
@@ -1803,12 +1822,16 @@ def _llm_call(
             )
             elapsed = perf_counter() - inference_start
             result_text = response.choices[0].message.content.strip()
+            _last_used_model_name = "OpenAI GPT-OSS 120B (Groq)"
             logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, settings.groq_model)
             return _parse_json_safe(result_text)
         except Exception as e:
-            logger.warning(f"Groq primary call failed, falling back to local model: {e}")
+            if normalized_choice == "groq":
+                logger.error("Groq explicit model call failed: %s", e)
+                raise RuntimeError(f"Groq generation failed: {e}") from e
+            logger.warning("Groq primary call failed, falling back to local model: %s", e)
 
-    # Fallback to local llama-cpp
+    # Fallback / explicit local llama-cpp (Custom Mistral 7B)
     llm = get_llm()
     inference_start = perf_counter()
     response = llm.create_chat_completion(
@@ -1824,6 +1847,7 @@ def _llm_call(
     )
     elapsed = perf_counter() - inference_start
     result_text = response["choices"][0]["message"]["content"].strip()
+    _last_used_model_name = "Mistral 7B (Custom HF)"
     logger.info("Local LLM call completed in %.2fs (max_tokens=%d)", elapsed, max_tokens)
     _log_gpu_status()
     logger.debug("Raw model output: %s", result_text)
@@ -1834,12 +1858,15 @@ def _llm_stream(
     system_prompt: str,
     user_msg: str,
     max_tokens: int,
+    model_choice: str = "auto",
 ) -> Generator[str, None, None]:
-    """Streaming LLM call — yields individual token strings. Prioritizes Groq."""
+    """Streaming LLM call — yields individual token strings. Respects model_choice."""
+    global _last_used_model_name
     settings = _get_settings()
     groq = _get_groq_client()
+    normalized_choice = _normalize_model_choice(model_choice)
 
-    if groq:
+    if normalized_choice in ("auto", "groq") and groq:
         try:
             start = perf_counter()
             token_count = 0
@@ -1862,12 +1889,16 @@ def _llm_stream(
                     token_count += 1
                     yield content
 
+            _last_used_model_name = "OpenAI GPT-OSS 120B (Groq)"
             logger.info("Groq stream completed in %.2fs (%d chunks, model=%s)", perf_counter() - start, token_count, settings.groq_model)
             return
         except Exception as e:
-            logger.warning(f"Groq streaming failed, falling back to local model: {e}")
+            if normalized_choice == "groq":
+                logger.error("Groq explicit stream failed: %s", e)
+                raise RuntimeError(f"Groq streaming failed: {e}") from e
+            logger.warning("Groq streaming failed, falling back to local model: %s", e)
 
-    # Fallback to local llama-cpp
+    # Fallback / explicit local llama-cpp (Custom Mistral 7B)
     llm = get_llm()
     start = perf_counter()
     token_count = 0
@@ -1890,6 +1921,7 @@ def _llm_stream(
         if content:
             token_count = 1
             yield content
+        _last_used_model_name = "Mistral 7B (Custom HF)"
         logger.info(
             "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d)",
             perf_counter() - start,
@@ -1906,8 +1938,9 @@ def _llm_stream(
             token_count += 1
             yield content
 
+    _last_used_model_name = "Mistral 7B (Custom HF)"
     logger.info(
-        "LLM stream completed in %.2fs (%d chunks, max_tokens=%d)",
+        "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d)",
         perf_counter() - start,
         token_count,
         max_tokens,
@@ -2423,6 +2456,7 @@ def _apply_output_contract(
     seo_score, seo_breakdown = _calculate_seo_score(current, cleaned_script)
     current["seo_score"] = seo_score
     current["seo_breakdown"] = seo_breakdown
+    current["model"] = current.get("model") or _last_used_model_name
 
     logger.info(
         "Output contract finalized in %.2fs (valid=%s, retries=%d, title_chars=%d, desc_chars=%d, tags=%d)",
@@ -2440,7 +2474,7 @@ def _apply_output_contract(
 # Strategy: standard (single LLM call → title + description + tags)
 # ---------------------------------------------------------------------------
 
-def _strategy_standard(cleaned_script: str) -> dict:
+def _strategy_standard(cleaned_script: str, model_choice: str = "auto") -> dict:
     settings = _get_settings()
     target_tag_count = _target_tag_count(cleaned_script)
     prompt_input = _prep_input(cleaned_script, settings.max_tokens)
@@ -2450,19 +2484,21 @@ def _strategy_standard(cleaned_script: str) -> dict:
         "Keep wording specific to concrete entities, avoid generic filler, and make the description detailed "
         "(125-200 words, around 800-1300 chars) without copying script lines verbatim."
     )
-    parsed = _llm_call(SYSTEM_PROMPT, user_msg, settings.max_tokens)
-    return _build_result(
+    parsed = _llm_call(SYSTEM_PROMPT, user_msg, settings.max_tokens, model_choice=model_choice)
+    res = _build_result(
         parsed,
         fallback_text=cleaned_script,
         target_tag_count=target_tag_count,
     )
+    res["model"] = _last_used_model_name
+    return res
 
 
 # ---------------------------------------------------------------------------
 # Strategy: two_pass (call 1 → title+tags, call 2 → description)
 # ---------------------------------------------------------------------------
 
-def _strategy_two_pass(cleaned_script: str) -> dict:
+def _strategy_two_pass(cleaned_script: str, model_choice: str = "auto") -> dict:
     settings = _get_settings()
     target_tag_count = _target_tag_count(cleaned_script)
     prompt_input = _prep_input(cleaned_script, 320)
@@ -2473,7 +2509,7 @@ def _strategy_two_pass(cleaned_script: str) -> dict:
         f"Generate a catchy title and {target_tag_count} SEO tags for this script. "
         "Prioritize concrete entities and tools from the script."
     )
-    parsed_1 = _llm_call(SYSTEM_PROMPT_TITLE_TAGS, user_msg_1, 260)
+    parsed_1 = _llm_call(SYSTEM_PROMPT_TITLE_TAGS, user_msg_1, 260, model_choice=model_choice)
     tags = _normalize_tags(
         parsed_1.get("tags", []),
         target_count=target_tag_count,
@@ -2493,19 +2529,19 @@ def _strategy_two_pass(cleaned_script: str) -> dict:
         "a short CTA."
     )
     desc_tokens = _cap_max_tokens(min(360, settings.max_tokens), "title_desc_batch")
-    parsed_2 = _llm_call(SYSTEM_PROMPT_DESC_ONLY, user_msg_2, desc_tokens)
+    parsed_2 = _llm_call(SYSTEM_PROMPT_DESC_ONLY, user_msg_2, desc_tokens, model_choice=model_choice)
     description = _clean_description(str(parsed_2.get("description", "")).strip())
     description = _expand_description_if_thin(description, cleaned_script)
     description = _upgrade_description_quality(description, cleaned_script, tags)
 
-    return {"title": title, "description": description, "tags": tags}
+    return {"title": title, "description": description, "tags": tags, "model": _last_used_model_name}
 
 
 # ---------------------------------------------------------------------------
 # Strategy: tfidf_tags (keyword extraction → tags, LLM → title+desc)
 # ---------------------------------------------------------------------------
 
-def _strategy_tfidf_tags(cleaned_script: str) -> dict:
+def _strategy_tfidf_tags(cleaned_script: str, model_choice: str = "auto") -> dict:
     from backend.keyword_extractor import extract_tags
 
     settings = _get_settings()
@@ -2525,7 +2561,7 @@ def _strategy_tfidf_tags(cleaned_script: str) -> dict:
         "instead of script-copy narration."
     )
     desc_tokens = _cap_max_tokens(min(360, settings.max_tokens), "title_desc_batch")
-    parsed = _llm_call(SYSTEM_PROMPT_TITLE_DESC, user_msg, desc_tokens)
+    parsed = _llm_call(SYSTEM_PROMPT_TITLE_DESC, user_msg, desc_tokens, model_choice=model_choice)
 
     description = _clean_description(str(parsed.get("description", "")).strip())
     description = _expand_description_if_thin(description, cleaned_script)
@@ -2538,6 +2574,7 @@ def _strategy_tfidf_tags(cleaned_script: str) -> dict:
         "title": title,
         "description": description,
         "tags": tags,
+        "model": _last_used_model_name,
     }
 
 
@@ -2545,7 +2582,7 @@ def _strategy_tfidf_tags(cleaned_script: str) -> dict:
 # Strategy: streaming (streamed single LLM call)
 # ---------------------------------------------------------------------------
 
-def _strategy_streaming(cleaned_script: str) -> Generator[dict, None, None]:
+def _strategy_streaming(cleaned_script: str, model_choice: str = "auto") -> Generator[dict, None, None]:
     settings = _get_settings()
     target_tag_count = _target_tag_count(cleaned_script)
     prompt_input = _prep_input(cleaned_script, settings.max_tokens)
@@ -2559,7 +2596,7 @@ def _strategy_streaming(cleaned_script: str) -> Generator[dict, None, None]:
 
     accumulated = ""
     stream_tokens = _cap_max_tokens(min(320, settings.max_tokens), "title_desc_stream")
-    for token in _llm_stream(SYSTEM_PROMPT, user_msg, stream_tokens):
+    for token in _llm_stream(SYSTEM_PROMPT, user_msg, stream_tokens, model_choice=model_choice):
         accumulated += token
         yield {"type": "token", "data": token}
 
@@ -2573,6 +2610,7 @@ def _strategy_streaming(cleaned_script: str) -> Generator[dict, None, None]:
         fallback_text=cleaned_script,
         target_tag_count=target_tag_count,
     )
+    payload["model"] = _last_used_model_name
     logger.info("Streaming post-process completed in %.2fs", perf_counter() - post_start)
     yield {
         "type": "done",
@@ -2584,7 +2622,7 @@ def _strategy_streaming(cleaned_script: str) -> Generator[dict, None, None]:
 # Strategy: tfidf_streaming (TF tags + streamed LLM title+desc)
 # ---------------------------------------------------------------------------
 
-def _strategy_tfidf_streaming(cleaned_script: str) -> Generator[dict, None, None]:
+def _strategy_tfidf_streaming(cleaned_script: str, model_choice: str = "auto") -> Generator[dict, None, None]:
     from backend.keyword_extractor import extract_tags
 
     settings = _get_settings()
@@ -2610,7 +2648,7 @@ def _strategy_tfidf_streaming(cleaned_script: str) -> Generator[dict, None, None
 
     stream_tokens = _cap_max_tokens(min(360, settings.max_tokens), "title_desc_stream")
     accumulated = ""
-    for token in _llm_stream(SYSTEM_PROMPT_TITLE_DESC, user_msg, stream_tokens):
+    for token in _llm_stream(SYSTEM_PROMPT_TITLE_DESC, user_msg, stream_tokens, model_choice=model_choice):
         accumulated += token
         yield {"type": "token", "data": token}
 
@@ -2631,6 +2669,7 @@ def _strategy_tfidf_streaming(cleaned_script: str) -> Generator[dict, None, None
             "title": title,
             "description": description,
             "tags": tags,
+            "model": _last_used_model_name,
         },
     }
 
@@ -2900,6 +2939,7 @@ def generate_title_variants(
     script_text: str,
     base_title: str,
     count: int = 2,
+    model_choice: str = "auto",
 ) -> list[str]:
     """
     Generate model-driven alternative titles for A/B testing.
@@ -2908,6 +2948,7 @@ def generate_title_variants(
         script_text: Source script used for metadata generation.
         base_title: Existing title to diversify from.
         count: Number of alternative titles to request.
+        model_choice: Preferred model ('auto', 'groq', or 'mistral').
 
     Returns:
         A list of unique alternative titles (up to ``count``).
@@ -2985,6 +3026,7 @@ def generate_title_variants(
                 user_msg,
                 220,
                 temperature=temp,
+                model_choice=model_choice,
             )
         except json.JSONDecodeError as exc:
             llm_attempt_s.append(perf_counter() - llm_call_start)
@@ -2997,165 +3039,101 @@ def generate_title_variants(
             continue
 
         llm_attempt_s.append(perf_counter() - llm_call_start)
-
-        raw_titles = _extract_variant_candidates(parsed)
-        if raw_titles:
+        attempt_titles = parsed.get("titles", []) if isinstance(parsed, dict) else []
+        if isinstance(attempt_titles, list) and attempt_titles:
+            raw_titles = [str(item) for item in attempt_titles]
             llm_success_attempt = attempt
             break
 
         llm_empty_payload_attempts += 1
-
         logger.warning(
-            "No title candidates found on attempt %d (payload keys=%s)",
+            "Title variants returned empty payload on attempt %d: %s",
             attempt,
-            sorted(parsed.keys()),
+            parsed,
         )
 
-    variants: list[str] = []
-    normalized_from_model_count = 0
-    coerced_from_model_count = 0
-    backfilled_count = 0
-    deterministic_fill_count = 0
-    seen = {cleaned_base_title.lower()}
-    seed_tags: list[str] = []
-    try:
-        from backend.keyword_extractor import extract_tags
+    support_tags = _normalize_tags(
+        [],
+        target_count=_target_tag_count(cleaned_script),
+        fallback_text=f"{cleaned_base_title} {cleaned_script}",
+    )
+    normalized = _clean_and_dedupe_title_variants(
+        raw_titles,
+        cleaned_base_title,
+        requested_count,
+        support_tags=support_tags,
+    )
 
-        seed_tags = extract_tags(cleaned_script, top_n=8)
-    except Exception:
-        seed_tags = []
-
-    for raw in raw_titles:
-        title = _normalize_variant_title(raw)
-        used_coercion = False
-        if not title:
-            raw_candidate = _clean_title(str(raw).strip())
-            raw_key = re.sub(r"\s+", " ", raw_candidate).strip().lower()
-            if not raw_key or raw_key == cleaned_base_title.lower():
-                continue
-            if _word_count(raw_candidate) < max(4, _get_settings().title_min_words - 2):
-                continue
-            title = _normalize_variant_title(
-                _coerce_title_to_bounds(raw_candidate, seed_tags)
-            )
-            used_coercion = bool(title)
-        if not title:
-            continue
-
-        if used_coercion:
-            coerced_from_model_count += 1
-        else:
-            normalized_from_model_count += 1
-
-        key = title.lower()
-        if key in seen:
-            continue
-
-        seen.add(key)
-        variants.append(title)
-
-        if len(variants) >= requested_count:
-            break
-
-    if len(variants) < requested_count:
-        needed = requested_count - len(variants)
-        before_backfill = len(variants)
-        variants.extend(
-            _backfill_variant_candidates(cleaned_base_title, cleaned_script, needed, seen)
-        )
-        variants = variants[:requested_count]
-        backfilled_count = max(0, len(variants) - before_backfill)
-
-    if len(variants) < requested_count:
-        acronym_tokens = {"ai", "api", "llm", "nlp", "seo"}
-        base_terms = [
-            token
-            for token in re.findall(r"[a-z0-9]+", cleaned_base_title.lower())
-            if len(token) > 2
-        ]
-        seed_topic = " ".join(
-            token.upper() if token in acronym_tokens else token.capitalize()
-            for token in base_terms[:2]
-        ) or "Creator Workflow"
-        seed_tool = (
-            base_terms[2].upper() if len(base_terms) > 2 and base_terms[2] in acronym_tokens
-            else (base_terms[2].capitalize() if len(base_terms) > 2 else "Python")
-        )
-        deterministic_templates = [
-            f"{seed_topic} with {seed_tool}: Practical Workflow Guide",
-            f"Build {seed_topic}: Step by Step Creator Playbook",
-            f"{seed_topic} Mistakes to Avoid for Better Results",
-            f"{seed_topic}: Faster Growth Strategy for Creators",
-            f"{seed_topic} Workflow: Better Reach and Retention",
-        ]
-
-        for template in deterministic_templates:
-            if len(variants) >= requested_count:
-                break
-            candidate = _coerce_title_to_bounds(template, seed_tags)
-            candidate = _normalize_variant_title(candidate)
-            if not candidate:
-                continue
-            key = candidate.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            variants.append(candidate)
-            deterministic_fill_count += 1
-
-    if len(variants) < requested_count:
-        logger.warning(
-            "Generated %d/%d title variants for base title '%s'",
-            len(variants),
+    if len(normalized) < requested_count:
+        fallback_titles = _generate_deterministic_title_variants(
+            cleaned_base_title,
+            cleaned_script,
             requested_count,
-            cleaned_base_title[:40],
         )
+        for candidate in fallback_titles:
+            if candidate not in normalized and candidate != cleaned_base_title:
+                normalized.append(candidate)
+            if len(normalized) >= requested_count:
+                break
 
-    llm_total_elapsed = round(sum(llm_attempt_s), 3)
-    total_elapsed = round(perf_counter() - request_start, 3)
+    if len(normalized) < requested_count:
+        emergency_titles = _build_emergency_title_variants(
+            cleaned_base_title,
+            cleaned_script,
+            requested_count,
+            support_tags=support_tags,
+        )
+        for candidate in emergency_titles:
+            if candidate not in normalized and candidate != cleaned_base_title:
+                normalized.append(candidate)
+            if len(normalized) >= requested_count:
+                break
+
+    normalized = normalized[:requested_count]
+    if not normalized:
+        normalized = [_coerce_title_to_bounds(f"{cleaned_base_title} Guide", support_tags)]
+
+    total_elapsed = perf_counter() - request_start
     _record_inference_diagnostic(
         "title_variants",
         {
-            "ok": len(variants) >= requested_count,
-            "strategy": "model_then_fallback",
+            "ok": True,
             "requested_count": requested_count,
-            "returned_count": len(variants),
+            "returned_count": len(normalized),
             "script_chars": len(cleaned_script),
             "base_title_chars": len(cleaned_base_title),
-            "run_temperature": _classify_run_temperature(
-                strategy="title_variants",
-                llm_total_s=llm_total_elapsed,
-                total_s=total_elapsed,
-            ),
+            "run_temperature": "warm" if llm_attempt_s and llm_attempt_s[0] < 1.0 else "cold",
             "llm_attempts": len(llm_attempt_s),
             "llm_success_attempt": llm_success_attempt,
             "llm_parse_failures": llm_parse_failures,
             "llm_empty_payload_attempts": llm_empty_payload_attempts,
-            "llm_total_s": llm_total_elapsed,
-            "llm_attempt_s": [round(value, 3) for value in llm_attempt_s],
-            "raw_candidate_count": len(raw_titles),
-            "normalized_from_model_count": normalized_from_model_count,
-            "coerced_from_model_count": coerced_from_model_count,
-            "backfilled_count": backfilled_count,
-            "deterministic_fill_count": deterministic_fill_count,
             "timings_s": {
-                "total_s": total_elapsed,
+                "total_s": round(total_elapsed, 3),
+                "llm_attempt_s": [round(val, 3) for val in llm_attempt_s],
             },
+            "titles": normalized,
         },
     )
 
-    return variants
+    logger.info(
+        "Generated %d title variants in %.2fs (requested=%d, attempts=%d)",
+        len(normalized),
+        total_elapsed,
+        requested_count,
+        len(llm_attempt_s),
+    )
+    return normalized
 
 
 # ---------------------------------------------------------------------------
-# Public API — non-streaming
+# Public API — batch
 # ---------------------------------------------------------------------------
 
 _NON_STREAMING = {"standard", "two_pass", "tfidf_tags"}
 _STREAMING = {"streaming", "tfidf_streaming"}
 
 
-def generate_youtube_metadata(script_text: str) -> dict:
+def generate_youtube_metadata(script_text: str, model_choice: str = "auto") -> dict:
     """
     Generate SEO-optimized YouTube metadata from a video script.
 
@@ -3165,9 +3143,10 @@ def generate_youtube_metadata(script_text: str) -> dict:
 
     Args:
         script_text: The user's video script or summary.
+        model_choice: Preferred model ('auto', 'groq', or 'mistral').
 
     Returns:
-        Dict with keys: title (str), description (str), tags (list[str]).
+        Dict with keys: title (str), description (str), tags (list[str]), model (str).
 
     Raises:
         ScriptValidationError: If input fails validation.
@@ -3195,8 +3174,8 @@ def generate_youtube_metadata(script_text: str) -> dict:
     strategy = settings.generation_strategy
 
     logger.info(
-        "Generating metadata (strategy=%s, script=%d chars)",
-        strategy, len(cleaned_script),
+        "Generating metadata (strategy=%s, script=%d chars, model_choice=%s)",
+        strategy, len(cleaned_script), model_choice,
     )
 
     strategy_elapsed = 0.0
@@ -3240,16 +3219,16 @@ def generate_youtube_metadata(script_text: str) -> dict:
     try:
         strategy_start = perf_counter()
         if strategy == "two_pass":
-            metadata = _strategy_two_pass(cleaned_script)
+            metadata = _strategy_two_pass(cleaned_script, model_choice=model_choice)
         elif strategy == "tfidf_tags":
-            metadata = _strategy_tfidf_tags(cleaned_script)
+            metadata = _strategy_tfidf_tags(cleaned_script, model_choice=model_choice)
         elif strategy in _STREAMING:
             # Consume stream, keep only the final result.
             metadata = None
             stream = (
-                _strategy_streaming(cleaned_script)
+                _strategy_streaming(cleaned_script, model_choice=model_choice)
                 if strategy == "streaming"
-                else _strategy_tfidf_streaming(cleaned_script)
+                else _strategy_tfidf_streaming(cleaned_script, model_choice=model_choice)
             )
             for event in stream:
                 now = perf_counter()
@@ -3273,7 +3252,7 @@ def generate_youtube_metadata(script_text: str) -> dict:
             if metadata is None:
                 raise RuntimeError("Streaming strategy produced no result.")
         else:
-            metadata = _strategy_standard(cleaned_script)
+            metadata = _strategy_standard(cleaned_script, model_choice=model_choice)
         strategy_elapsed = perf_counter() - strategy_start
 
         allow_retry = settings.stream_allow_retry if strategy in _STREAMING else True
@@ -3355,6 +3334,7 @@ def generate_youtube_metadata(script_text: str) -> dict:
 
 def generate_youtube_metadata_stream(
     script_text: str,
+    model_choice: str = "auto",
 ) -> Generator[dict, None, None]:
     """
     Stream metadata generation token-by-token.
@@ -3392,8 +3372,8 @@ def generate_youtube_metadata_stream(
     allow_retry = settings.stream_allow_retry if strategy in _STREAMING else True
 
     logger.info(
-        "Streaming metadata (strategy=%s, script=%d chars)",
-        strategy, len(cleaned_script),
+        "Streaming metadata (strategy=%s, script=%d chars, model_choice=%s)",
+        strategy, len(cleaned_script), model_choice,
     )
 
     strategy_elapsed = 0.0
@@ -3454,9 +3434,9 @@ def generate_youtube_metadata_stream(
         if strategy in _STREAMING:
             strategy_start = perf_counter()
             stream = (
-                _strategy_tfidf_streaming(cleaned_script)
+                _strategy_tfidf_streaming(cleaned_script, model_choice=model_choice)
                 if strategy == "tfidf_streaming"
-                else _strategy_streaming(cleaned_script)
+                else _strategy_streaming(cleaned_script, model_choice=model_choice)
             )
 
             emitted_done = False
@@ -3491,9 +3471,10 @@ def generate_youtube_metadata_stream(
                     )
                     yield {"type": "done", "data": finalized}
                     emitted_done = True
-                else:
-                    yield event
+                    break
 
+                yield event
+            
             if not emitted_done:
                 message = "Streaming strategy produced no final result."
                 strategy_elapsed = perf_counter() - strategy_start

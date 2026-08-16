@@ -14,9 +14,10 @@
 - **Quantitative SEO Diagnostics** (Score breakdown: title, description, tags, keyword relevance, readability)
 - **A/B Test Title Variants** (Alternative high-conversion title variations)
 
-The application utilizes a **Dual-Path Hybrid Inference Architecture**:
+The application utilizes a **Dual-Path Hybrid Inference Architecture** with an **Interactive Model Selector**:
 1. **Primary Cloud Inference (Groq LPU):** Generates streaming metadata packages using `openai/gpt-oss-120b` (OpenAI 120B open-weight model at ~500 T/s) via Groq in under 1.5 seconds.
-2. **Fallback Local Inference (Llama.cpp CPU):** Runs a custom fine-tuned Mistral 7B Q4_K_M GGUF model (`custom-mistral-yt-seo-Q4_K_M.gguf`) hosted directly on Hugging Face Spaces (CPU runtime), ensuring zero downtime if external APIs fail or are unconfigured.
+2. **Fallback / Custom Local Inference (Llama.cpp CPU):** Runs a custom fine-tuned Mistral 7B Q4_K_M GGUF model (`custom-mistral-yt-seo-Q4_K_M.gguf`) hosted directly on Hugging Face Spaces (CPU runtime).
+3. **Interactive Model Selector & Live Indicator:** Creators can choose between `Auto (Hybrid)`, `Groq 120B (Cloud LPU)`, and `Mistral 7B (Custom HF)` directly from the header and input bar. The UI indicates the active model in real-time, displays it in generation telemetry, and logs it per history item.
 
 ---
 
