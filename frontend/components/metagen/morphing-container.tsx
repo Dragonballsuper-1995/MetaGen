@@ -714,9 +714,9 @@ function LoadingIndicator() {
         PROCESSING_DATA_STREAM{dots}
       </h3>
       <div className="text-[10px] text-muted-foreground/80 leading-loose uppercase flex flex-col items-start text-left bg-background/50 p-3 border border-border/40 rounded-sm w-64">
-        <span>> EXTRACTING_ENTITIES...</span>
-        <span>> ANALYZING_NARRATIVE_ARC...</span>
-        <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>> GENERATING_OUTPUT...</motion.span>
+        <span>&gt; EXTRACTING_ENTITIES...</span>
+        <span>&gt; ANALYZING_NARRATIVE_ARC...</span>
+        <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}>&gt; GENERATING_OUTPUT...</motion.span>
       </div>
     </div>
   );

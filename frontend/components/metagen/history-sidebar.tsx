@@ -75,7 +75,7 @@ export function HistorySidebar({
                     CACHE_EMPTY
                   </h3>
                   <p className="text-xs font-mono text-muted-foreground max-w-xs uppercase">
-                    > AWAITING DATA INPUT...
+                    &gt; AWAITING DATA INPUT...
                   </p>
                 </div>
               ) : (
@@ -134,7 +134,7 @@ export function HistorySidebar({
             {history.length > 0 && (
               <div className="px-6 py-4 border-t-2 border-border bg-muted/30">
                 <p className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground text-center">
-                  > SESSION-BASED LOCAL STORAGE
+                  &gt; SESSION-BASED LOCAL STORAGE
                 </p>
               </div>
             )}
