@@ -3,111 +3,69 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* MetaGen Premium Dot Matrix Theme */
 :root {
-  --background: oklch(0.99 0.002 240);
-  --foreground: oklch(0.1 0.01 240);
-  --card: oklch(0.99 0 0);
-  --card-foreground: oklch(0.1 0.01 240);
-  --popover: oklch(0.99 0 0);
-  --popover-foreground: oklch(0.1 0.01 240);
-  /* Electric Blue Accent */
+  /* Blueprint Light Mode */
+  --background: oklch(0.98 0.002 240);
+  --foreground: oklch(0.12 0.01 240);
   --primary: oklch(0.55 0.18 250);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.005 240);
-  --secondary-foreground: oklch(0.3 0.01 240);
-  --muted: oklch(0.96 0.005 240);
+  --primary-foreground: oklch(0.98 0.01 240);
+  --muted: oklch(0.92 0.01 240);
   --muted-foreground: oklch(0.45 0.01 240);
-  --accent: oklch(0.92 0.01 240);
-  --accent-foreground: oklch(0.15 0.01 240);
+  --border: oklch(0.85 0.01 240);
+  --success: oklch(0.60 0.20 150);
   --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.88 0.01 240);
-  --input: oklch(0.92 0.005 240);
-  --ring: oklch(0.55 0.18 250);
-  --radius: 0.25rem; /* Sharp, terminal-like corners */
+  --radius: 2px;
 }
 
 .dark {
-  --background: oklch(0.05 0.01 240);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.08 0.01 240);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.08 0.01 240);
-  --popover-foreground: oklch(0.95 0.01 240);
-  /* Electric Blue Accent */
-  --primary: oklch(0.60 0.18 250);
-  --primary-foreground: oklch(0.05 0 0);
-  --secondary: oklch(0.12 0.01 240);
-  --secondary-foreground: oklch(0.85 0.02 240);
-  --muted: oklch(0.12 0.01 240);
-  --muted-foreground: oklch(0.55 0.02 240);
-  --accent: oklch(0.18 0.015 240);
-  --accent-foreground: oklch(0.95 0.01 240);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.95 0 25);
-  --border: oklch(0.18 0.01 240);
-  --input: oklch(0.15 0.01 240);
-  --ring: oklch(0.60 0.18 250);
+  /* Hacker Dark Mode */
+  --background: oklch(0.12 0.01 240);
+  --foreground: oklch(0.98 0.01 240);
+  --primary: oklch(0.65 0.20 250);
+  --primary-foreground: oklch(0.10 0.01 240);
+  --muted: oklch(0.18 0.01 240);
+  --muted-foreground: oklch(0.65 0.01 240);
+  --border: oklch(0.25 0.01 240);
+  --success: oklch(0.70 0.20 150);
+  --destructive: oklch(0.60 0.22 25);
 }
 
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 2px);
+  --color-success: var(--success);
+  --color-destructive: var(--destructive);
+  
+  --radius-sm: var(--radius);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-lg: var(--radius);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-primary/50;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/30 overflow-hidden font-sans;
-    transition-property: background-color, color;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
+    @apply bg-background text-foreground selection:bg-primary/30 overflow-x-hidden font-sans;
   }
 }
 
-/* Premium Dot Matrix Background Patterns */
 @layer utilities {
   .bg-dot-matrix {
-    /* Using primary blue for the dots to make the grid pop */
-    background-image: radial-gradient(var(--primary) 1.5px, transparent 1.5px);
+    background-image: radial-gradient(color-mix(in srgb, var(--border) 80%, transparent) 1.5px, transparent 1.5px);
     background-size: 24px 24px;
     background-position: 0 0;
   }
   
-  .bg-dot-matrix-dense {
-    background-image: radial-gradient(var(--primary) 1px, transparent 1px);
-    background-size: 12px 12px;
-    background-position: 0 0;
-  }
-
-  /* Structural Panel replacing soft glass-panel */
-  .structural-panel {
-    @apply bg-background/95 border-2 border-border shadow-[4px_4px_0_0_var(--border)] dark:shadow-[4px_4px_0_0_var(--border)];
+  .dark .bg-dot-matrix {
+    background-image: radial-gradient(color-mix(in srgb, var(--primary) 20%, transparent) 1.5px, transparent 1.5px);
   }
 }
