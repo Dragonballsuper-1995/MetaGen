@@ -4,8 +4,16 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geistSans = Geist({ 
+  subsets: ["latin"], 
+  variable: "--font-geist-sans", 
+  display: 'swap' 
+});
+const geistMono = Geist_Mono({ 
+  subsets: ["latin"], 
+  variable: "--font-geist-mono", 
+  display: 'swap' 
+});
 
 export const metadata: Metadata = {
   title: 'MetaGen — AI-Powered YouTube Metadata Generator',
@@ -29,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased bg-background text-foreground overflow-x-hidden transition-colors duration-300">
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground overflow-x-hidden transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="relative min-h-screen flex flex-col">
             {children}

@@ -198,10 +198,10 @@ export default function MetaGenPage() {
               >
                 <div className="flex items-center justify-between border-b border-border/50 pb-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+                    <span className="w-2 h-2 rounded-[1px] bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
                     <span className="text-xs font-bold text-foreground">Runtime Diagnostics</span>
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary border border-primary/20">
                     SSE Active
                   </span>
                 </div>
