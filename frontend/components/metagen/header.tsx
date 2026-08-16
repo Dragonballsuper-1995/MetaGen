@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
-import { Moon, Sun, Terminal, Cpu } from "lucide-react"
+import { Moon, Sun, Terminal, Cpu, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Panel } from "@/components/ui/panel"
 import { cn } from "@/lib/utils"
@@ -12,9 +12,10 @@ export type ModelChoice = "auto" | "groq" | "mistral"
 interface HeaderProps {
   selectedModel?: ModelChoice
   onModelChange?: (model: ModelChoice) => void
+  onHistoryToggle?: () => void
 }
 
-export function Header({ selectedModel = "auto", onModelChange }: HeaderProps) {
+export function Header({ selectedModel = "auto", onModelChange, onHistoryToggle }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -29,7 +30,7 @@ export function Header({ selectedModel = "auto", onModelChange }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 p-4 flex items-center justify-between shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 p-4 flex items-center justify-between shadow-[0_4px_0_0_var(--border)]">
       <div className="flex items-center gap-4">
         {/* Logo container */}
         <div className="h-8 flex items-center">
@@ -71,6 +72,16 @@ export function Header({ selectedModel = "auto", onModelChange }: HeaderProps) {
             label="MISTRAL-7B"
           />
         </Panel>
+
+        {/* History Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onHistoryToggle}
+          title="Neural Cache"
+        >
+          <Database className="w-4 h-4" />
+        </Button>
 
         {/* Theme Toggle */}
         <Button
