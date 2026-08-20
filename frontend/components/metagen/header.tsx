@@ -2,12 +2,9 @@
 
 import * as React from "react"
 import { useTheme } from "next-themes"
-import { Moon, Sun, Terminal, Cpu, Database } from "lucide-react"
+import { Moon, Sun, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Panel } from "@/components/ui/panel"
-import { cn } from "@/lib/utils"
 
-export type ModelChoice = "auto" | "groq" | "mistral"
 
 interface HeaderProps {
   selectedModel?: ModelChoice
@@ -15,7 +12,11 @@ interface HeaderProps {
   onHistoryToggle?: () => void
 }
 
-export function Header({ selectedModel = "auto", onModelChange, onHistoryToggle }: HeaderProps) {
+export function Header({
+  selectedModel = "auto",
+  onModelChange,
+  onHistoryToggle,
+}: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -30,57 +31,31 @@ export function Header({ selectedModel = "auto", onModelChange, onHistoryToggle 
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/95 p-4 flex items-center justify-between shadow-[0_4px_0_0_var(--border)]">
-      <div className="flex items-center gap-4">
-        {/* Logo container */}
-        <div className="h-8 flex items-center">
-          {/* 
-            Since the SVG handles dark mode internally via media queries, 
-            we just render it using an img tag or object tag. 
-          */}
-          <img 
-            src="/logos/header_logo.svg" 
-            alt="MetaGen" 
-            className="h-full object-contain"
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-surface/95 backdrop-blur-md px-4 md:px-8 py-3 flex items-center justify-between">
+      {/* Brand: Using official header_logo.svg */}
+      <div className="flex items-center gap-3">
+        <div className="h-6 md:h-7 flex items-center">
+          <img
+            src="/logos/header_logo.svg"
+            alt="MetaGen"
+            className="h-full w-auto object-contain"
           />
-        </div>
-        
-        {/* Version Badge */}
-        <div className="hidden md:flex items-center px-2 py-0.5 border-2 border-primary/30 bg-primary/10 text-primary rounded-sm font-mono text-[10px] uppercase tracking-widest font-bold">
-          <Terminal className="w-3 h-3 mr-1" />
-          v2.0.0_BETA
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Model Selector */}
-        <Panel className="hidden md:flex items-center p-1 bg-muted/50 border-border">
-          <ModelButton 
-            active={selectedModel === "auto"} 
-            onClick={() => handleModelSelect("auto")}
-            label="AUTO"
-          />
-          <ModelButton 
-            active={selectedModel === "groq"} 
-            onClick={() => handleModelSelect("groq")}
-            label="GROQ-120B"
-            icon={<Cpu className="w-3 h-3 mr-1" />}
-          />
-          <ModelButton 
-            active={selectedModel === "mistral"} 
-            onClick={() => handleModelSelect("mistral")}
-            label="MISTRAL-7B"
-          />
-        </Panel>
+      {/* Navigation & Controls */}
+      <div className="flex items-center gap-2 md:gap-3">
 
-        {/* History Toggle */}
+
+        {/* Neural Cache / History */}
         <Button
           variant="outline"
           size="icon"
           onClick={onHistoryToggle}
-          title="Neural Cache"
+          className="h-9 w-9 rounded-xl border-border bg-surface hover:bg-muted"
+          title="Past Generations"
         >
-          <Database className="w-4 h-4" />
+          <Database className="w-4 h-4 text-foreground" />
         </Button>
 
         {/* Theme Toggle */}
@@ -88,44 +63,18 @@ export function Header({ selectedModel = "auto", onModelChange, onHistoryToggle 
           variant="outline"
           size="icon"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          className="h-9 w-9 rounded-xl border-border bg-surface hover:bg-muted"
           title="Toggle Theme"
         >
           {!mounted ? (
-            <div className="w-4 h-4" /> // placeholder
+            <div className="w-4 h-4" />
           ) : theme === "light" ? (
-            <Moon className="w-4 h-4" />
+            <Moon className="w-4 h-4 text-foreground" />
           ) : (
-            <Sun className="w-4 h-4" />
+            <Sun className="w-4 h-4 text-foreground" />
           )}
         </Button>
       </div>
     </header>
-  )
-}
-
-function ModelButton({ 
-  active, 
-  onClick, 
-  label, 
-  icon 
-}: { 
-  active: boolean
-  onClick: () => void
-  label: string
-  icon?: React.ReactNode
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center px-3 py-1.5 rounded-sm font-mono text-[10px] font-bold tracking-widest transition-all duration-150 ease-linear",
-        active 
-          ? "bg-primary text-primary-foreground shadow-[2px_2px_0_0_var(--border)] translate-y-[-1px] translate-x-[-1px] border-2 border-primary"
-          : "bg-transparent text-muted-foreground hover:text-foreground border-2 border-transparent hover:border-border"
-      )}
-    >
-      {icon}
-      {label}
-    </button>
   )
 }

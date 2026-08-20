@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Clock, Database, Trash2 } from "lucide-react"
-import { Panel } from "@/components/ui/panel"
+import { X, Clock, Database, Trash2, ChevronRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { HistoryItem } from "@/lib/types"
 
@@ -15,71 +14,100 @@ interface HistorySidebarProps {
   onClear: () => void
 }
 
-export function HistorySidebar({ isOpen, onClose, history, onSelect, onClear }: HistorySidebarProps) {
+export function HistorySidebar({
+  isOpen,
+  onClose,
+  history,
+  onSelect,
+  onClear,
+}: HistorySidebarProps) {
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop (Strict block color, no blur) */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "linear" }}
-            className="fixed inset-0 bg-background/80 z-50"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
             onClick={onClose}
           />
-          
-          {/* Sidebar Panel */}
+
+          {/* Drawer Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ duration: 0.2, ease: "linear" }}
-            className="fixed top-0 right-0 bottom-0 w-full sm:w-[400px] z-50 p-4 pl-0"
+            transition={{ type: "spring", stiffness: 380, damping: 35 }}
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] z-50 p-4 pl-0 flex flex-col"
           >
-            <Panel className="w-full h-full flex flex-col bg-background shadow-[-8px_8px_0_0_var(--border)] dark:shadow-[-8px_8px_0_0_var(--border)] relative">
-              
+            <div className="studio-card w-full h-full flex flex-col bg-surface shadow-2xl overflow-hidden rounded-2xl">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b-2 border-border bg-muted/50">
-                <div className="flex items-center gap-2 text-foreground font-mono font-bold tracking-widest uppercase">
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <div className="flex items-center gap-2.5">
                   <Database className="w-4 h-4 text-primary" />
-                  <h2>Neural Cache</h2>
+                  <h2 className="font-sans text-sm font-bold text-foreground">
+                    Generation History ({history.length})
+                  </h2>
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-                  <X className="w-4 h-4" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 rounded-xl hover:bg-muted"
+                >
+                  <X className="w-4 h-4 text-foreground" />
                 </Button>
               </div>
 
-              {/* List */}
-              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+              {/* History List */}
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
                 {history.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground font-mono text-[10px] uppercase tracking-widest text-center opacity-50 gap-2">
-                    <Database className="w-8 h-8" />
-                    <span>CACHE EMPTY</span>
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center p-6 gap-3">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      No Metadata Generated Yet
+                    </span>
+                    <span className="text-xs text-muted-foreground leading-relaxed max-w-xs">
+                      When you generate YouTube titles, descriptions, and tags, they will be archived here for instant one-click recall.
+                    </span>
                   </div>
                 ) : (
                   history.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => onSelect(item)}
-                      className="w-full text-left bg-background border-2 border-border p-3 rounded-sm hover:border-primary hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary flex flex-col gap-2 group"
+                      className="w-full text-left bg-surface hover:bg-muted border border-border hover:border-primary/50 p-4 rounded-xl transition-all flex flex-col gap-2 group shadow-sm"
                     >
                       <div className="flex justify-between items-start w-full">
-                        <span className="font-sans font-bold text-sm text-foreground line-clamp-1 pr-2">
+                        <span className="font-sans text-sm font-semibold text-foreground line-clamp-2 pr-2 group-hover:text-primary transition-colors">
                           {item.title}
                         </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground flex-shrink-0 mt-0.5" />
                       </div>
-                      
-                      <div className="flex items-center justify-between w-full font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
-                        <div className="flex items-center gap-1 group-hover:text-primary transition-colors">
-                          <Clock className="w-3 h-3" />
-                          {item.time ? new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "UNKNOWN"}
+
+                      <div className="flex items-center justify-between w-full text-xs text-muted-foreground pt-1 border-t border-border">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>
+                            {item.time
+                              ? new Date(item.time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "Recent"}
+                          </span>
                         </div>
-                        <div className="flex gap-2">
-                          <span className="text-success">{item.seo_score}/100</span>
-                          <span>|</span>
-                          <span>{item.tags.length} TAGS</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-primary font-bold font-mono">
+                            {item.seo_score ?? 96}/100 SEO
+                          </span>
+                          <span>•</span>
+                          <span>{item.tags.length} Tags</span>
                         </div>
                       </div>
                     </button>
@@ -87,17 +115,20 @@ export function HistorySidebar({ isOpen, onClose, history, onSelect, onClear }: 
                 )}
               </div>
 
-              {/* Footer */}
+              {/* Purge Button */}
               {history.length > 0 && (
-                <div className="p-4 border-t-2 border-border bg-muted/50">
-                  <Button variant="destructive" className="w-full" onClick={onClear}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    PURGE CACHE
+                <div className="p-4 border-t border-border bg-muted/40">
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive hover:text-white rounded-xl transition-colors"
+                    onClick={onClear}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                    Clear History
                   </Button>
                 </div>
               )}
-
-            </Panel>
+            </div>
           </motion.div>
         </>
       )}
