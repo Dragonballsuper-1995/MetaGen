@@ -79,9 +79,14 @@ def _get_groq_client():
         return _groq_client
 
     settings = _get_settings()
-    if Groq and settings.groq_api_key:
+    groq_key = (
+        (getattr(settings, "groq_api_key", None) or "").strip()
+        or os.environ.get("GROQ_API_KEY", "").strip()
+        or os.environ.get("GROQ_KEY", "").strip()
+    )
+    if Groq and groq_key:
         try:
-            _groq_client = Groq(api_key=settings.groq_api_key)
+            _groq_client = Groq(api_key=groq_key)
             logger.info("Groq client initialized for lightning-fast inference.")
             return _groq_client
         except Exception as e:
@@ -1884,16 +1889,20 @@ def _llm_call(
                     "Do NOT add conversational text. Output the raw JSON object directly."
                 )
                 groq_max_tokens = max(max_tokens, 2048)
-                response = groq.chat.completions.create(
-                    messages=[
+                groq_params: dict[str, Any] = {
+                    "messages": [
                         {"role": "system", "content": groq_system_prompt},
                         {"role": "user", "content": user_msg},
                     ],
-                    model=model_id,
-                    max_tokens=groq_max_tokens,
-                    temperature=settings.temperature if temperature is None else temperature,
-                    top_p=settings.top_p,
-                )
+                    "model": model_id,
+                    "max_tokens": groq_max_tokens,
+                    "temperature": settings.temperature if temperature is None else temperature,
+                    "top_p": settings.top_p,
+                }
+                if "gpt-oss" in model_id.lower():
+                    groq_params["response_format"] = {"type": "json_object"}
+
+                response = groq.chat.completions.create(**groq_params)
                 elapsed = perf_counter() - inference_start
                 result_text = response.choices[0].message.content.strip()
                 _last_used_model_name = _human_model_name(model_id)
@@ -1925,10 +1934,8 @@ def _llm_call(
     )
     elapsed = perf_counter() - inference_start
     result_text = response["choices"][0]["message"]["content"].strip()
-    _last_used_model_name = _human_model_name("mistral")
-    logger.info("Local LLM call completed in %.2fs (max_tokens=%d)", elapsed, max_tokens)
-    _log_gpu_status()
-    logger.debug("Raw model output: %s", result_text)
+    _last_used_model_name = "Mistral 7B Q4_K_M (Local CPU)"
+    logger.info("Local LLM call completed in %.2fs", elapsed)
     return _parse_json_safe(result_text)
 
 
@@ -1957,17 +1964,21 @@ def _llm_stream(
                     "Do NOT add conversational text. Output the raw JSON object directly."
                 )
                 groq_max_tokens = max(max_tokens, 2048)
-                response = groq.chat.completions.create(
-                    messages=[
+                groq_params: dict[str, Any] = {
+                    "messages": [
                         {"role": "system", "content": groq_system_prompt},
                         {"role": "user", "content": user_msg},
                     ],
-                    model=model_id,
-                    max_tokens=groq_max_tokens,
-                    temperature=settings.temperature,
-                    top_p=settings.top_p,
-                    stream=True,
-                )
+                    "model": model_id,
+                    "max_tokens": groq_max_tokens,
+                    "temperature": settings.temperature,
+                    "top_p": settings.top_p,
+                    "stream": True,
+                }
+                if "gpt-oss" in model_id.lower():
+                    groq_params["response_format"] = {"type": "json_object"}
+
+                response = groq.chat.completions.create(**groq_params)
                 in_think_block = False
                 for chunk in response:
                     content = chunk.choices[0].delta.content
@@ -1997,14 +2008,17 @@ def _llm_stream(
                     token_count += 1
                     yield content
 
-                _last_used_model_name = _human_model_name(model_id)
-                logger.info(
-                    "Groq stream completed in %.2fs (%d chunks, model=%s)",
-                    perf_counter() - start,
-                    token_count,
-                    model_id,
-                )
-                return
+                if token_count > 0:
+                    _last_used_model_name = _human_model_name(model_id)
+                    logger.info(
+                        "Groq stream completed in %.2fs (%d chunks, model=%s)",
+                        perf_counter() - start,
+                        token_count,
+                        model_id,
+                    )
+                    return
+
+                logger.warning("Groq stream for model %s produced 0 content chunks; attempting next candidate", model_id)
             except Exception as e:
                 logger.warning("Groq streaming for model %s failed: %s", model_id, e)
                 if normalized_choice != "auto" and len(candidates) == 1:
