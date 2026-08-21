@@ -1837,9 +1837,9 @@ def _get_groq_candidate_models(normalized_choice: str) -> list[str]:
     """Return ordered list of Groq model IDs to attempt for a given model choice."""
     settings = _get_settings()
     if normalized_choice == "groq-120b":
-        return ["openai/gpt-oss-120b"]
+        return ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
     if normalized_choice == "groq-20b":
-        return ["openai/gpt-oss-20b"]
+        return ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
     if normalized_choice == "qwen-27b":
         return ["qwen/qwen3.6-27b"]
 
@@ -1851,8 +1851,11 @@ def _get_groq_candidate_models(normalized_choice: str) -> list[str]:
     fallback_models = getattr(
         settings,
         "groq_fallback_models",
-        ["openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
+        ["openai/gpt-oss-20b"],
     )
+    if isinstance(fallback_models, str):
+        fallback_models = [m.strip() for m in fallback_models.split(",") if m.strip()]
+
     for model_id in fallback_models:
         if model_id and model_id not in candidates:
             candidates.append(model_id)

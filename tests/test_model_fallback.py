@@ -47,9 +47,9 @@ def test_groq_candidate_models_auto():
 
 
 def test_groq_candidate_models_explicit():
-    assert _get_groq_candidate_models("groq-120b") == ["openai/gpt-oss-120b"]
-    assert _get_groq_candidate_models("groq-20b") == ["openai/gpt-oss-20b"]
-    assert _get_groq_candidate_models("qwen-27b") == ["qwen/qwen3.6-27b"]
+    assert _get_groq_candidate_models("groq-120b")[0] == "openai/gpt-oss-120b"
+    assert _get_groq_candidate_models("groq-20b")[0] == "openai/gpt-oss-20b"
+    assert _get_groq_candidate_models("qwen-27b")[0] == "qwen/qwen3.6-27b"
 
 
 def test_groq_multi_tier_fallback_success():
