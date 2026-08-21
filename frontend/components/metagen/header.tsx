@@ -1,74 +1,80 @@
-import { motion } from "framer-motion";
-import { History, Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
-import { MetaGenLogo } from "./logo";
+"use client"
+
+import * as React from "react"
+import { useTheme } from "next-themes"
+import { Moon, Sun, Database } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
 
 interface HeaderProps {
-  onHistoryToggle: () => void;
+  selectedModel?: ModelChoice
+  onModelChange?: (model: ModelChoice) => void
+  onHistoryToggle?: () => void
 }
 
-export function Header({ onHistoryToggle }: HeaderProps) {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+export function Header({
+  selectedModel = "auto",
+  onModelChange,
+  onHistoryToggle,
+}: HeaderProps) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
 
-  useEffect(() => setMounted(true), []);
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleModelSelect = (model: ModelChoice) => {
+    if (onModelChange) {
+      onModelChange(model)
+    }
+  }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/40 backdrop-blur-2xl border-b border-border/50 shadow-2xl">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-        {/* Custom MetaGen Dot Matrix Logo */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-3 cursor-pointer group"
-          onClick={() => window.location.reload()}
-        >
-          <img 
-            src="/logos/header_logo.svg" 
-            alt="MetaGen Logo" 
-            className="h-6 sm:h-7 w-auto transition-transform duration-300 group-hover:scale-[1.02]"
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-surface/95 backdrop-blur-md px-4 md:px-8 py-3 flex items-center justify-between">
+      {/* Brand: Using official header_logo.svg */}
+      <div className="flex items-center gap-3">
+        <div className="h-6 md:h-7 flex items-center">
+          <img
+            src="/logos/header_logo.svg"
+            alt="MetaGen"
+            className="h-full w-auto object-contain"
           />
-          <div className="flex items-center mt-1">
-            <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground font-bold leading-none hidden sm:inline-block border border-border/50 rounded-full px-2 py-0.5 ml-2 bg-muted/20">
-              V2.5
-            </span>
-          </div>
-        </motion.div>
+        </div>
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-2 sm:gap-3"
+      {/* Navigation & Controls */}
+      <div className="flex items-center gap-2 md:gap-3">
+
+
+        {/* Neural Cache / History */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onHistoryToggle}
+          className="h-9 w-9 rounded-xl border-border bg-surface hover:bg-muted"
+          title="Past Generations"
         >
-          {/* Theme Toggle */}
-          {mounted && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-xl hover:bg-secondary text-foreground transition-colors duration-300 h-9 w-9"
-            >
-              {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-blue-600" />
-              )}
-            </Button>
-          )}
+          <Database className="w-4 h-4 text-foreground" />
+        </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onHistoryToggle}
-            className="gap-2 rounded-xl border-border/70 bg-card/60 hover:bg-secondary text-foreground transition-all duration-300 h-9 px-3"
-          >
-            <History className="w-4 h-4 text-muted-foreground" />
-            <span className="hidden sm:inline font-medium text-xs">History</span>
-          </Button>
-        </motion.div>
+        {/* Theme Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          className="h-9 w-9 rounded-xl border-border bg-surface hover:bg-muted"
+          title="Toggle Theme"
+        >
+          {!mounted ? (
+            <div className="w-4 h-4" />
+          ) : theme === "light" ? (
+            <Moon className="w-4 h-4 text-foreground" />
+          ) : (
+            <Sun className="w-4 h-4 text-foreground" />
+          )}
+        </Button>
       </div>
     </header>
-  );
+  )
 }

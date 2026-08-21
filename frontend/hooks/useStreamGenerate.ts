@@ -3,17 +3,16 @@
 import { useState, useCallback, useRef } from "react";
 import { API_URL_FALLBACK, resolveApiUrl } from "@/lib/constants";
 import { getHeaders } from "@/lib/api";
-import type { GenerationStatus, HistoryItem, MetadataResult, ModelChoice, StreamEvent } from "@/lib/types";
-import { useStreamParser } from "@/hooks/useStreamParser";
+import type { GenerationStatus, HistoryItem, MetadataResult, ModelChoice } from "@/lib/types";
+import { parseJsonDataLineBuffer } from "@/lib/sse";
 
-const FIRST_STREAM_ACTIVITY_TIMEOUT_MS = 20_000;
+const FIRST_STREAM_ACTIVITY_TIMEOUT_MS = 30_000;
 const FIRST_STREAM_ACTIVITY_RETRY_COUNT = 1;
 const DEFAULT_STREAM_TARGET_TOKENS = 220;
 const STREAM_TARGET_MIN_TOKENS = 120;
 const STREAM_TARGET_MAX_TOKENS = 720;
 
 export function useStreamGenerate() {
-  const { consumeStream, parseJsonDataLineBuffer } = useStreamParser();
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [result, setResult] = useState<MetadataResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +45,7 @@ export function useStreamGenerate() {
 
   const generate = useCallback(
     async (text: string, model: ModelChoice = "auto") => {
-      // Reset first
+      // Reset active abort controller and state
       if (abortRef.current) abortRef.current.abort();
       setStatus("streaming");
       setResult(null);
@@ -62,7 +61,7 @@ export function useStreamGenerate() {
 
       try {
         const headers = getHeaders();
-        const base = (await resolveApiUrl().catch(() => API_URL_FALLBACK));
+        const base = await resolveApiUrl().catch(() => API_URL_FALLBACK);
 
         for (let attempt = 0; attempt <= FIRST_STREAM_ACTIVITY_RETRY_COUNT; attempt += 1) {
           const attemptController = new AbortController();
@@ -73,6 +72,13 @@ export function useStreamGenerate() {
           let observedProgress = 0;
           let observedTarget = DEFAULT_STREAM_TARGET_TOKENS;
 
+          const timeoutTimer = setTimeout(() => {
+            if (!sawFirstActivity) {
+              streamActivityTimedOut = true;
+              attemptController.abort();
+            }
+          }, FIRST_STREAM_ACTIVITY_TIMEOUT_MS);
+
           try {
             const response = await fetch(`${base}/api/generate/stream`, {
               method: "POST",
@@ -82,28 +88,35 @@ export function useStreamGenerate() {
             });
 
             if (!response.ok) {
+              clearTimeout(timeoutTimer);
               const data = await response.json().catch(() => ({}));
               throw new Error(data.detail || `HTTP ${response.status}`);
             }
 
             const reader = response.body?.getReader();
-            if (!reader) throw new Error("No response body");
+            if (!reader) {
+              clearTimeout(timeoutTimer);
+              throw new Error("No response stream body received from backend.");
+            }
 
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
             let completed = false;
 
-            await consumeStream<StreamEvent>({
-              reader,
-              parseBuffer: parseJsonDataLineBuffer,
-              firstActivityTimeoutMs: FIRST_STREAM_ACTIVITY_TIMEOUT_MS,
-              onFirstActivityTimeout: () => {
-                if (!sawFirstActivity) {
-                  streamActivityTimedOut = true;
-                  attemptController.abort();
-                }
-              },
-              onEvent: (event) => {
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              buffer += chunk;
+
+              const { events, remainder } = parseJsonDataLineBuffer(buffer);
+              buffer = remainder;
+
+              for (const event of events) {
                 if (!sawFirstActivity) {
                   sawFirstActivity = true;
+                  clearTimeout(timeoutTimer);
                 }
 
                 switch (event.type) {
@@ -140,19 +153,19 @@ export function useStreamGenerate() {
                   case "error":
                     throw new Error(event.message || "Stream failed");
                 }
-              },
-            });
+              }
+            }
+
+            clearTimeout(timeoutTimer);
 
             if (completed) {
               return;
             }
 
-            throw new Error("Stream ended before completion.");
+            throw new Error("Stream ended before completion signal.");
           } catch (attemptErr) {
-            if (
-              attemptErr instanceof Error
-              && attemptErr.name === "AbortError"
-            ) {
+            clearTimeout(timeoutTimer);
+            if (attemptErr instanceof Error && attemptErr.name === "AbortError") {
               if (!streamActivityTimedOut) {
                 return;
               }
@@ -168,7 +181,7 @@ export function useStreamGenerate() {
               }
 
               throw new Error(
-                `No stream activity received within ${FIRST_STREAM_ACTIVITY_TIMEOUT_MS / 1000}s after retry.`,
+                `Backend stream activity timed out after ${FIRST_STREAM_ACTIVITY_TIMEOUT_MS / 1000}s (model may still be warming up).`,
               );
             }
 
@@ -183,7 +196,7 @@ export function useStreamGenerate() {
         if (err instanceof Error && err.name === "AbortError") return;
         if (err instanceof TypeError) {
           setError(
-            `Backend is offline. Start API server on ${API_URL_FALLBACK} and try again.`,
+            `Backend is offline. Ensure API server is running on ${API_URL_FALLBACK} and try again.`,
           );
         } else {
           setError(err instanceof Error ? err.message : "Stream failed");

@@ -3,109 +3,376 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* MetaGen Premium Dynamic Theme - Unified Blue Accent */
 :root {
-  --background: oklch(0.99 0.002 240);
-  --foreground: oklch(0.2 0.01 240);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.01 240);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.01 240);
-  /* Unified Blue */
-  --primary: oklch(0.55 0.18 250);
-  --primary-foreground: oklch(0.99 0.002 240);
-  --secondary: oklch(0.96 0.005 240);
-  --secondary-foreground: oklch(0.3 0.01 240);
-  --muted: oklch(0.97 0.005 240);
-  --muted-foreground: oklch(0.45 0.01 240);
-  --accent: oklch(0.94 0.01 240);
-  --accent-foreground: oklch(0.15 0.01 240);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.99 0.002 25);
-  --border: oklch(0.9 0.01 240);
-  --input: oklch(0.94 0.005 240);
-  --ring: oklch(0.55 0.18 250);
-  --radius: 1.25rem;
+  /* Studio Light Mode */
+  --background: #F8F9FA;
+  --foreground: #090A0C;
+  
+  --primary: #0084FF; /* Electric Blue */
+  --primary-foreground: #FFFFFF;
+  
+  --surface: #FFFFFF;
+  --surface-raised: #F1F4F9;
+  --muted: #F1F4F9;
+  --muted-foreground: #64748B;
+  --border: rgba(0, 0, 0, 0.08);
+  
+  --success: #10B981;
+  --warning: #F59E0B;
+  --destructive: #EF4444;
+  
+  --radius: 16px;
 }
 
 .dark {
-  --background: oklch(0.08 0.005 240);
-  --foreground: oklch(0.92 0.01 240);
-  --card: oklch(0.11 0.01 240);
-  --card-foreground: oklch(0.92 0.01 240);
-  --popover: oklch(0.11 0.01 240);
-  --popover-foreground: oklch(0.92 0.01 240);
-  /* Unified Blue for Dark Mode */
-  --primary: oklch(0.65 0.18 250);
-  --primary-foreground: oklch(0.1 0.01 240);
-  --secondary: oklch(0.16 0.01 240);
-  --secondary-foreground: oklch(0.85 0.02 240);
-  --muted: oklch(0.14 0.01 240);
-  --muted-foreground: oklch(0.55 0.02 240);
-  --accent: oklch(0.2 0.015 240);
-  --accent-foreground: oklch(0.95 0.01 240);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.95 0.01 25);
-  --border: oklch(0.2 0.01 240);
-  --input: oklch(0.15 0.01 240);
-  --ring: oklch(0.65 0.18 250);
+  /* Studio Dark Mode */
+  --background: #08080A;
+  --foreground: #F8FAFC;
+  
+  --primary: #0084FF; /* Luminous Electric Blue */
+  --primary-foreground: #FFFFFF;
+  
+  --surface: #0E0E12;
+  --surface-raised: #16161C;
+  --muted: #16161C;
+  --muted-foreground: #94A3B8;
+  --border: rgba(255, 255, 255, 0.08);
+  
+  --success: #10B981;
+  --warning: #F59E0B;
+  --destructive: #EF4444;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-dot: 'Doto', var(--font-geist-mono), monospace;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-primary/40;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/30 overflow-hidden;
-    transition-property: background-color, color;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in-out;
+    @apply bg-background text-foreground selection:bg-primary/25 overflow-x-hidden font-sans antialiased;
+    letter-spacing: -0.012em;
   }
 }
 
-/* Premium Background Patterns */
-@layer utilities {
-  .bg-grid-white {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='currentColor' stroke-opacity='0.04'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+.font-dot {
+  font-family: 'Doto', var(--font-geist-mono), monospace;
+  font-feature-settings: "ss01" on, "ss02" on;
+}
+
+/* Electric Blue Text Gradient */
+.text-gradient-blue {
+  background: linear-gradient(135deg, #0084FF 0%, #00B4D8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Electric Blue Glow */
+.glow-blue {
+  box-shadow: 0 0 30px -5px rgba(0, 132, 255, 0.4);
+}
+
+/* Solid Bento Studio Cards (100% Opaque to prevent background dot bleed) */
+.bento-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+}
+
+.dark .bento-card {
+  background-color: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.5);
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  opacity: 0.3;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ─── DOT MATRIX IDENTITY UTILITIES ─────────────────────────────────────── */
+
+/* Panel readout label — mimics physical LED panel section headers */
+.dm-label {
+  font-family: 'Doto', var(--font-geist-mono), monospace;
+  font-feature-settings: "ss01" on, "ss02" on;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Numeric readout — dot-matrix digits for scores, counts, durations */
+.dm-digit {
+  font-family: 'Doto', var(--font-geist-mono), monospace;
+  font-feature-settings: "ss01" on, "ss02" on;
+  font-weight: 700;
+}
+
+/* Terminal-style textarea: sharp 1px electric blue focus border */
+.terminal-input {
+  border-radius: 10px;
+  border: 1px solid var(--border) !important;
+  background: var(--muted);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  resize: vertical;
+}
+
+.terminal-input:focus {
+  outline: none !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 1px var(--primary) !important;
+}
+
+/* ─── FLUID MORPHING INPUT CARD (Single Physical Component - 60fps GPU Accelerated) ──────────────── */
+:root {
+  --spring-morph: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-soft: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.morph-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
+  overflow: hidden;
+  will-change: width, height, border-radius;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  contain: paint;
+  margin: 0 auto;
+  transition:
+    width 360ms var(--spring-morph),
+    height 360ms var(--spring-morph),
+    border-radius 360ms var(--spring-morph),
+    border-color 200ms ease,
+    box-shadow 360ms var(--spring-soft);
+}
+
+.dark .morph-card {
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Collapsed Rounded Rectangle Geometry (Fits 1 Viewport) */
+.morph-card.collapsed {
+  width: 680px;
+  max-width: 100%;
+  height: 54px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.morph-card.collapsed:hover {
+  border-color: rgba(0, 132, 255, 0.45);
+  box-shadow: 0 20px 50px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 132, 255, 0.16);
+}
+
+/* Expanded Rounded Rectangle Geometry (Fits 1 Viewport) */
+.morph-card.expanded {
+  width: 820px;
+  max-width: 100%;
+  height: 380px;
+  border-radius: 20px;
+  cursor: default;
+  box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 132, 255, 0.08);
+}
+
+/* ── COLLAPSED PANEL LAYER ── */
+.collapsed-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 0 18px;
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity 160ms ease,
+    transform 280ms var(--spring-morph);
+  pointer-events: auto;
+}
+
+.morph-card.expanded .collapsed-panel {
+  opacity: 0;
+  transform: translate3d(0, -6px, 0) scale(0.98);
+  pointer-events: none;
+}
+
+/* Rounded-Corner Rectangle Action / Play Trigger Button */
+.btn-play-trigger {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  box-shadow: 0 0 16px rgba(0, 132, 255, 0.45);
+  cursor: pointer;
+  transition:
+    transform 200ms var(--spring-morph),
+    background-color 150ms ease,
+    box-shadow 200ms ease;
+}
+
+.btn-play-trigger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 22px rgba(0, 132, 255, 0.7);
+}
+
+.btn-play-trigger:active {
+  transform: scale(0.95);
+}
+
+/* ── EXPANDED PANEL LAYER & PROGRESSIVE REVEAL ── */
+.expanded-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  pointer-events: none;
+  transition:
+    opacity 200ms ease 30ms,
+    transform 320ms var(--spring-morph) 15ms;
+}
+
+.morph-card.expanded .expanded-panel {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  pointer-events: auto;
+}
+
+/* 1. Header Emergence */
+.morph-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translate3d(0, -6px, 0);
+  transition: opacity 180ms ease 50ms, transform 280ms var(--spring-morph) 40ms;
+}
+
+.morph-card.expanded .morph-header-bar {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* 2. Editor Emergence */
+.morph-editor-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 10px 0;
+  border: 1.5px solid rgba(0, 132, 255, 0.45);
+  border-radius: 12px;
+  background: var(--muted);
+  box-shadow: 0 0 20px rgba(0, 132, 255, 0.06), inset 0 2px 6px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity 200ms ease 70ms, transform 300ms var(--spring-morph) 60ms;
+}
+
+.morph-card.expanded .morph-editor-frame {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.morph-editor-frame textarea {
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  caret-color: var(--primary);
+}
+
+/* 3. Footer Emergence */
+.morph-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
+  transition: opacity 180ms ease 90ms, transform 280ms var(--spring-morph) 75ms;
+}
+
+.morph-card.expanded .morph-footer-bar {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+@media (max-width: 640px) {
+  .morph-card.collapsed {
+    width: 100%;
+    height: 52px;
   }
-  /* Enhanced dark mode grid */
-  .dark .bg-grid-white {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgba(255,255,255,0.06)' stroke-opacity='1'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+  .morph-card.expanded {
+    width: 100%;
+    height: 420px;
   }
-  .bg-dot-white {
-    background-image: radial-gradient(currentColor 1px, transparent 1px);
-    background-size: 16px 16px;
-    mask-image: radial-gradient(ellipse at center, black, transparent);
+  .morph-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
-  .glass-panel {
-    @apply bg-card/80 backdrop-blur-3xl border border-border/50 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] dark:bg-card/50 dark:border-white/10 dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.6)];
+  .morph-footer-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
 }
+
+
