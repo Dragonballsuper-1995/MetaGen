@@ -177,6 +177,19 @@ export function TerminalCore({
 
                 <button
                   type="button"
+                  onClick={() => onModelChange("groq-20b")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                    selectedModel === "groq-20b"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Zap className="w-3 h-3 text-emerald-400" />
+                  <span>Groq 20B</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => onModelChange("mistral")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
                     selectedModel === "mistral"

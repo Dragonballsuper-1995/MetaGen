@@ -2,7 +2,7 @@
 // API schemas (mirrors FastAPI Pydantic models in main.py)
 // ---------------------------------------------------------------------------
 
-export type ModelChoice = "auto" | "groq" | "mistral";
+export type ModelChoice = "auto" | "groq" | "groq-20b" | "mistral";
 
 export interface VideoRequest {
   text: string;

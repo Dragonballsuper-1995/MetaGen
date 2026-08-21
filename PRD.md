@@ -35,7 +35,7 @@ MetaGen solves these problems by combining ultra-fast LPU cloud inference with l
 
 ### 3.1 Primary Goals
 1. **Ultra-Fast Generation:** Deliver complete metadata packages in under 1.5 seconds using Groq LPU streaming.
-2. **Dual-Path Hybrid Architecture:** Automatic failover between primary cloud models (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) and local CPU execution (`Mistral 7B Q4_K_M GGUF`).
+2. **Dual-Path Hybrid Architecture:** Automatic failover between primary cloud models (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.6-27b`) and local CPU execution (`Mistral 7B Q4_K_M GGUF`).
 3. **Structured SEO Output:** Enforce strict length bounds (Title: 40–80 chars, Description: 150–300 words with CTAs, Tags: 5–12 multi-word tags).
 4. **Quantitative SEO Scoring:** Real-time scoring across Title Hook, Description Depth, Tag Quality, Keyword Relevance, and Readability.
 5. **A/B Title Variants:** Provide 3 distinct psychological angles (Curiosity & High CTR, Search & SEO Ranked, Direct Tutorial & Action).
@@ -71,7 +71,7 @@ MetaGen solves these problems by combining ultra-fast LPU cloud inference with l
 
 ### 5.2 Backend (FastAPI + Python 3.11)
 - **Framework:** FastAPI with asynchronous lifecycle management
-- **Primary Inference:** Groq API (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`)
+- **Primary Inference:** Groq API (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.6-27b`)
 - **Fallback Inference:** `llama-cpp-python` running Mistral 7B Q4_K_M GGUF (CPU-optimized)
 - **Keyword Engine:** Zero-dependency term-frequency & n-gram extraction ([`keyword_extractor.py`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/backend/keyword_extractor.py))
 - **Deployment:** Hugging Face Spaces (Dockerized CPU environment)
