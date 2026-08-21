@@ -1,557 +1,140 @@
-# PRD.md — Project Requirements Document
+# PRD.md — MetaGen Product Requirements Document
 
 ## 1. Product Overview
 
 ### 1.1 Product Name
-
-**Working title:** Bollywood Game  
-**Optional product name direction:** A broader, brandable name may be chosen later if the game expands beyond Bollywood into other entertainment categories.
+**MetaGen** (AI-Powered Video SEO & Metadata Generator)
 
 ### 1.2 One-Line Summary
-
-A mobile-first word-guessing game inspired by the classic notebook-and-pen **Bollywood** game, where players guess a movie title, actor, actress, and song using limited clues while wrong guesses reduce the remaining letters in **BOLLYWOOD**.
+A high-performance full-stack AI platform that transforms raw video scripts, outlines, and transcripts into algorithmically optimized YouTube titles, descriptions, tags, and quantitative SEO diagnostics in under 1.5 seconds.
 
 ### 1.3 Product Vision
-
-Create a modern, premium, highly replayable mobile game that preserves the nostalgia of the original classroom/hostel Bollywood game while adding polished UX, structured hint systems, multiplayer support, progression, daily challenges, and scalable content generation.
+Eliminate the friction and guesswork of YouTube content publishing by providing creators with an intelligent, dual-path inference engine that delivers high-CTR curiosity hooks, algorithmically grounded descriptions, structured tags, and visual preview simulations with zero downtime.
 
 ### 1.4 Product Philosophy
-
-The product should feel like a mix of:
-
-- a nostalgic social game,
-- a premium entertainment app,
-- and a lightweight competitive puzzle game.
-
-The experience should be simple to learn, fast to play, visually attractive, and flexible enough to support future categories beyond Bollywood.
+- **Speed & Flow:** Instant perception through real-time Server-Sent Events (SSE) streaming (~500 tokens/sec).
+- **Algorithmic Rigor:** Deep keyword extraction and anti-echo grounding—metadata must accurately represent the video without verbatim copying.
+- **Reliability:** Dual-path hybrid inference. If cloud APIs experience outages or rate limits, the system seamlessly falls back to an offline local model.
+- **Cinematic Experience:** Premium glassmorphism UI/UX with zero layout shift, dark/light dynamic theming, and terminal-grade telemetry.
 
 ---
 
 ## 2. Problem Statement
 
-The original notebook version of the game is fun but has several limitations:
+YouTube creators and video marketing teams spend significant time drafting titles, descriptions, and tags. Existing solutions suffer from:
+1. **Generic Output:** Standard AI tools generate clickbait titles that lack topic grounding or regurgitate the input script verbatim.
+2. **Inflexible AI Dependencies:** Most tools rely on single proprietary cloud APIs that fail during outages or rate-limiting.
+3. **Lack of Diagnostic Transparency:** Creators cannot see *why* a metadata package is effective or how it scores against YouTube algorithm benchmarks.
+4. **Poor UI/UX:** Cluttered, bloated dashboards that slow down the creator workflow.
 
-- It depends on manual setup and human memory.
-- It is difficult to scale beyond a small group.
-- It lacks persistent progress, rewards, and replay value.
-- Puzzle quality can vary widely.
-- There is no structured onboarding, tutorial, or fairness system.
-- It cannot support modern mobile gameplay patterns such as daily challenges, streaks, ranked play, or asynchronous multiplayer.
-
-This project solves those limitations by turning the game into a structured mobile app with consistent rules, modern UI, and a scalable puzzle engine.
+MetaGen solves these problems by combining ultra-fast LPU cloud inference with local fallback execution, strict SEO heuristics, and a dedicated creator-focused interface.
 
 ---
 
 ## 3. Goals and Objectives
 
 ### 3.1 Primary Goals
-
-1. Recreate the classic Bollywood pen-and-paper game in digital form.
-2. Make the experience mobile-first and intuitive.
-3. Build a robust hint-based guessing flow.
-4. Support one-player and multiplayer gameplay.
-5. Add progression, rewards, and replay loops.
-6. Provide a content system that can grow over time.
+1. **Ultra-Fast Generation:** Deliver complete metadata packages in under 1.5 seconds using Groq LPU streaming.
+2. **Dual-Path Hybrid Architecture:** Automatic failover between primary cloud models (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) and local CPU execution (`Mistral 7B Q4_K_M GGUF`).
+3. **Structured SEO Output:** Enforce strict length bounds (Title: 40–80 chars, Description: 150–300 words with CTAs, Tags: 5–12 multi-word tags).
+4. **Quantitative SEO Scoring:** Real-time scoring across Title Hook, Description Depth, Tag Quality, Keyword Relevance, and Readability.
+5. **A/B Title Variants:** Provide 3 distinct psychological angles (Curiosity & High CTR, Search & SEO Ranked, Direct Tutorial & Action).
 
 ### 3.2 Secondary Goals
-
-1. Make the game feel premium rather than like a basic quiz app.
-2. Enable future expansion into other entertainment categories.
-3. Support AI-assisted or rule-based puzzle generation.
-4. Create an implementation foundation that can be expanded in phases.
-
-### 3.3 Success Definition
-
-The product is successful if users:
-
-- understand the game quickly,
-- return regularly to play new puzzles,
-- complete puzzles with meaningful challenge,
-- enjoy sharing or competing with friends,
-- and keep engaging with the app over time.
+1. **Free / Low-Cost Operation:** Prioritize 100% free developer tiers (GroqCloud Free, Gemini Flash Free, OpenRouter Free, Local GGUF).
+2. **Modular Extensibility:** Clean decoupling allowing independent on-demand activation of future features (Chapters, Thumbnails, Shorts, Audio Ingestion).
 
 ---
 
 ## 4. Target Users
 
 ### 4.1 Primary Audience
+- **Tech & Software YouTubers:** Need precise, spec-accurate metadata and technical tags.
+- **Educators & Course Creators:** Require structured descriptions with key takeaways and clear search ranking.
+- **Video Editors & Marketing Agencies:** Need fast batch processing and copy-ready formatting for clients.
 
-- Students who played the notebook version in school or college.
-- Casual mobile gamers who like word games and trivia.
-- Movie lovers who enjoy guessing actors, songs, and film names.
-- Friend groups looking for a lightweight social game.
-
-### 4.2 Secondary Audience
-
-- Family users who want a simple entertainment game.
-- Nostalgia-driven users who remember the original pen-and-paper format.
-- Content creators or community groups looking for party-style games.
-
-### 4.3 User Personas
-
-#### Persona A: Nostalgic Player
-
-- Grew up playing Bollywood in notebooks.
-- Wants familiar mechanics.
-- Prefers simple UI and quick rounds.
-
-#### Persona B: Competitive Player
-
-- Likes leaderboards, streaks, and challenge modes.
-- Wants measurable progress and replayability.
-
-#### Persona C: Social Player
-
-- Plays with friends in a room or party setting.
-- Wants multiplayer and turn-based interaction.
-
-#### Persona D: Movie Buff
-
-- Knows actors, actresses, songs, and movie trivia.
-- Wants harder puzzles and deeper content.
+### 4.2 User Personas
+- **Alex (Solo Tech Creator):** Records coding tutorials, wants high-CTR titles and structured descriptions in seconds before hitting publish.
+- **Sarah (Agency Content Lead):** Manages 10 client channels, needs consistent SEO scoring and multi-angle title ideas for A/B testing.
+- **David (Educator / Podcaster):** Produces 45-minute deep dives, needs grounded summaries and keyword-rich tags that rank on Google Search.
 
 ---
 
-## 5. Product Scope
+## 5. System Architecture & Tech Stack
 
-### 5.1 In Scope
+### 5.1 Frontend (Next.js 16 + React 19)
+- **Framework:** Next.js 16 (App Router, Turbopack)
+- **Styling:** Tailwind CSS 4, Vanilla CSS variables (OKLCH color system)
+- **Animations:** Framer Motion (LazyMotion optimization)
+- **State Management:** Custom React hooks (`useStreamGenerate`, `useHistory`, `useTitleVariants`)
+- **Deployment:** Vercel
 
-- Single-player puzzle gameplay.
-- Classic Bollywood-style puzzle format.
-- Hint system with penalties.
-- Wrong-guess penalty based on letters in **BOLLYWOOD**.
-- Daily challenge mode.
-- Endless mode.
-- Local or online multiplayer mode.
-- Progression, XP, streaks, badges, and rewards.
-- Categorized puzzle packs.
-- Basic onboarding/tutorial.
-- User profile and game statistics.
-- Puzzle validation and answer checking.
-
-### 5.2 Out of Scope for Initial Release
-
-- Real-money gambling mechanics.
-- Social media account dependency.
-- Complex live voice chat.
-- User-generated content moderation at scale.
-- Full AI chat assistant inside gameplay.
-- Large open-world game systems.
-- Video streaming or licensed clip playback.
-
-### 5.3 Future Scope
-
-- Expansion beyond Bollywood into Hollywood, anime, TV shows, sports, and other categories.
-- Seasonal events.
-- Tournament mode.
-- Advanced matchmaking.
-- AI-generated clue chains.
-- Community-created puzzle packs.
+### 5.2 Backend (FastAPI + Python 3.11)
+- **Framework:** FastAPI with asynchronous lifecycle management
+- **Primary Inference:** Groq API (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`)
+- **Fallback Inference:** `llama-cpp-python` running Mistral 7B Q4_K_M GGUF (CPU-optimized)
+- **Keyword Engine:** Zero-dependency term-frequency & n-gram extraction ([`keyword_extractor.py`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/backend/keyword_extractor.py))
+- **Deployment:** Hugging Face Spaces (Dockerized CPU environment)
 
 ---
 
-## 6. Core Game Concept
+## 6. Functional Requirements
 
-The core gameplay is based on four answer slots:
+### 6.1 Script Input & Presets
+- Support raw text input, pasted scripts, or outlines (20 to 3,000 characters).
+- Live input telemetry: Character count, word count, and estimated speaking time ($\sim 130\text{ wpm}$).
+- One-click sample presets (Tech Review, Vlog, Educational, Architecture).
 
-1. Movie Title
-2. Actor
-3. Actress
-4. Song
+### 6.2 Model Selection & Strategy
+- Model Choice Selector:
+  - `Auto (Hybrid)`: Automatic failover from Groq 120B $\rightarrow$ Llama 70B $\rightarrow$ Llama 8B $\rightarrow$ Local Mistral 7B.
+  - `Groq 120B`: Explicit cloud LPU execution.
+  - `Mistral 7B`: Explicit local HF Spaces execution.
+- Real-time SSE token streaming over `/api/generate/stream`.
 
-A setter provides initial letters or partial clues for each slot. The guesser attempts to identify all four correctly.
+### 6.3 Metadata Output Contract
+Each generation must produce:
+1. **Title:** High-converting, bounded between 40 and 85 characters, enriched with grounded topic entities.
+2. **Description:** 150 to 300 words with strong introductory hook, value breakdown, and engagement call-to-action.
+3. **Tags:** 5 to 12 multi-word tags (2–4 words per tag, $\le 30$ chars each).
+4. **SEO Diagnostics:** Composite score (0–100) and 5-factor breakdown.
+5. **Model Telemetry:** Active model name, generation duration, and token count.
 
-### 6.1 Penalty System
-
-Every wrong guess or purchased hint removes one letter from the word **BOLLYWOOD**.
-
-Example life track:
-
-- B
-- O
-- L
-- L
-- Y
-- W
-- O
-- O
-- D
-
-If all letters are removed, the round ends in failure.
-
-### 6.2 Win Condition
-
-The user wins the round when all four slots are correctly guessed before all lives are exhausted.
+### 6.4 Creator Output Tools
+- One-click "Copy All Metadata" formatted for YouTube Studio.
+- Individual section copy buttons (Title, Description, Comma-separated Studio tags).
+- Live YouTube Snippet Simulator (Desktop and Mobile search result view).
+- Multi-Angle Title Switcher with CTR estimates.
+- Session-persisted History Drawer (last 50 generations cached in LocalStorage).
 
 ---
 
-## 7. Game Modes
+## 7. Non-Functional Requirements
 
-### 7.1 Classic Mode
+### 7.1 Performance & Latency
+- **Time to First Token (TTFT):** $<350\text{ ms}$ on Groq LPU.
+- **Full Stream Completion:** $<1.5\text{ s}$ on Groq, $<25\text{ s}$ on HF Spaces CPU.
+- **Frontend Load Performance:** Zero Layout Shift (CLS = 0), First Contentful Paint (FCP) $<0.8\text{ s}$.
 
-The closest digital version of the notebook game.
+### 7.2 Reliability & Availability
+- Automatic graceful degradation from Cloud to Local GGUF.
+- Background keep-warm heartbeat daemon (`backend/services/model_runtime.py`) preventing CPU memory eviction.
+- Rate limiting via SlowAPI (`10/minute` default).
 
-- A single puzzle contains the four slots.
-- Initial clue letters are shown.
-- Wrong guesses reduce lives.
-- Hints may be requested at a cost.
-
-### 7.2 Daily Challenge
-
-A fixed puzzle released once per day.
-
-- Same puzzle for all players.
-- Encourages streaks and repeat visits.
-- Can support leaderboards.
-
-### 7.3 Endless Mode
-
-Continuously generated puzzles.
-
-- Used for casual practice.
-- No daily limitation.
-- Good for high replay value.
-
-### 7.4 Multiplayer Mode
-
-One player creates a room, others join, and the group solves or sets puzzles depending on the selected sub-mode.
-
-- Turn-based setup can be supported.
-- Party mode should be easy to join.
-
-### 7.5 Survival Mode
-
-Players keep going through puzzles until they lose all lives or fail a set number of rounds.
-
-- Suitable for score chasing.
-- Supports tension and replayability.
-
-### 7.6 Blitz Mode
-
-A time-based mode where the player solves as many puzzles as possible in a short timer.
-
-- Encourages speed and pattern recognition.
-
-### 7.7 Practice Mode
-
-A low-pressure mode where the player can explore categories and learn the mechanics.
-
-- May include unlimited retries.
-- Useful for onboarding.
+### 7.3 Security
+- API key verification support via `X-API-Key` header.
+- CORS restricted to configured production and local development origins.
+- Zero client-side exposure of private secrets.
 
 ---
 
-## 8. Functional Requirements
-
-### 8.1 Onboarding and Entry
-
-- The app must teach the rules quickly.
-- First-time users must see a short interactive tutorial.
-- The game should explain what the four slots mean.
-- The app should explain how BOLLYWOOD lives work.
-
-### 8.2 Puzzle Start Flow
-
-- User selects a mode.
-- System loads a puzzle.
-- Initial clues are displayed.
-- Lives, score, and hint controls become visible.
-
-### 8.3 Guessing Flow
-
-- User enters guesses for each slot.
-- Correct answers lock the slot.
-- Wrong answers reduce lives.
-- Duplicate wrong guesses should not break the system.
-- Input should support text entry, paste, and optional voice input later.
-
-### 8.4 Hint System
-
-- Hints must cost lives or a similar currency.
-- Hints should progressively reveal more specific information.
-- Hint types may include release year, director, genre, plot clue, singer, extra letter, or answer length.
-- Hints should be designed so they help without fully trivializing the puzzle.
-
-### 8.5 Scoring and Progression
-
-- Users earn points for solving puzzles.
-- Bonus points may be awarded for solving without hints.
-- Bonus points may be awarded for fewer wrong guesses.
-- XP, levels, and badges should reward continued play.
-
-### 8.6 Profile and Stats
-
-The app should track:
-
-- total puzzles solved,
-- win rate,
-- hint usage,
-- streaks,
-- favorite categories,
-- best modes,
-- and recent performance.
-
-### 8.7 Puzzle Validation
-
-- Answers must be checked in a normalized way.
-- Matching should ignore case differences.
-- Matching should handle punctuation and spacing variations.
-- The system should support aliases where necessary.
-
-### 8.8 Content Pack System
-
-- Puzzles should be grouped by category or theme.
-- Users should be able to select packs.
-- Packs can be unlocked progressively.
-
-### 8.9 Multiplayer Requirements
-
-- The host should be able to create a room.
-- Other users should be able to join with a room code.
-- Game state should sync correctly between players.
-- The host should be able to start, reset, or end the session.
-
-### 8.10 Accessibility Requirements
-
-- Text must be readable on small screens.
-- Color contrast must be strong enough for legibility.
-- Controls should be large enough for touch input.
-- Feedback should not depend only on color.
-
----
-
-## 9. Non-Functional Requirements
-
-### 9.1 Performance
-
-- Screens should load quickly.
-- Puzzle transitions should feel immediate.
-- Hint and validation responses should be near-instant.
-- The app should remain usable on mid-range devices.
-
-### 9.2 Reliability
-
-- Puzzle state must not be lost during common navigation.
-- Multiplayer sessions should recover gracefully from dropped connections.
-- The app should avoid crashes caused by invalid or incomplete content.
-
-### 9.3 Scalability
-
-- The architecture should allow more categories, more puzzles, and more modes later.
-- The content system should be easy to extend without rewriting core gameplay.
-
-### 9.4 Maintainability
-
-- Game logic should be modular.
-- UI components should be reusable.
-- Answer validation and hint generation should be separated from presentation.
-
-### 9.5 Security
-
-- User data should be protected.
-- Multiplayer room codes should not expose sensitive information.
-- Any admin or content-management features should be restricted.
-
----
-
-## 10. Key User Flows
-
-### 10.1 First-Time User Flow
-
-1. Open app.
-2. See intro screen.
-3. Read or tap through simple tutorial.
-4. Choose Classic or Practice mode.
-5. Start first puzzle.
-
-### 10.2 Standard Gameplay Flow
-
-1. Select mode.
-2. Review clue letters.
-3. Enter guesses for four slots.
-4. Use hints if needed.
-5. Either solve the puzzle or run out of lives.
-6. Receive score and summary.
-
-### 10.3 Daily Challenge Flow
-
-1. Open app.
-2. See today’s puzzle.
-3. Attempt solve.
-4. Submit score.
-5. View streak and leaderboard position.
-
-### 10.4 Multiplayer Flow
-
-1. One player creates a room.
-2. Others join with code.
-3. Game begins.
-4. Each player participates based on room rules.
-5. Final result is displayed.
-
----
-
-## 11. Content Requirements
-
-### 11.1 Puzzle Data Fields
-
-Each puzzle should ideally include:
-
-- Puzzle ID
-- Category / language / pack
-- Movie title
-- Actor
-- Actress
-- Song
-- Initial clue letters
-- Difficulty rating
-- Hint chain
-- Validation aliases
-- Release year
-- Metadata for analytics
-
-### 11.2 Content Quality Rules
-
-- Answers must be verified.
-- Songs must belong to the selected movie.
-- Actor and actress choices must be relevant to the movie.
-- Clues should feel fair and solvable.
-- Difficulty should vary across modes and packs.
-
-### 11.3 Content Variety
-
-The first release should avoid repetitive puzzles and should mix:
-
-- popular mainstream films,
-- iconic songs,
-- different decades,
-- different difficulty levels,
-- and a mix of easy and hard titles.
-
----
-
-## 12. AI Requirements
-
-If AI is used in the project, it should support—not replace—core game logic.
-
-### 12.1 Suitable AI Uses
-
-- Puzzle generation assistance.
-- Hint sequence generation.
-- Difficulty estimation.
-- Metadata normalization.
-- Duplicate avoidance.
-- Category expansion planning.
-
-### 12.2 AI Constraints
-
-- AI must not invent invalid answers.
-- AI must not create puzzles without validation.
-- AI-generated content should be checked against trusted data sources or rules.
-- AI should not directly control critical game state without safeguards.
-
----
-
-## 13. User Stories
-
-### 13.1 Casual Player
-
-- As a player, I want to solve a puzzle quickly so I can enjoy a short game session.
-- As a player, I want clear clues so I know what I am solving.
-
-### 13.2 Nostalgia Player
-
-- As a player, I want the game to feel like the original notebook version.
-- As a player, I want the BOLLYWOOD penalty system to remain central.
-
-### 13.3 Competitive Player
-
-- As a player, I want streaks, XP, and leaderboards so I have a reason to return.
-- As a player, I want harder modes that test my knowledge.
-
-### 13.4 Social Player
-
-- As a player, I want to create a room so friends can join.
-- As a player, I want the game to work smoothly in a group.
-
----
-
-## 14. Edge Cases and Special Cases
-
-- The user enters a partial answer.
-- The user enters the same wrong answer repeatedly.
-- A movie has multiple known song titles.
-- An actor has multiple spellings or aliases.
-- A song title contains punctuation or special characters.
-- A puzzle has too few hints or too many hints.
-- A user disconnects during multiplayer.
-- A puzzle is too hard and needs fallback support.
-
-The product must handle these cases gracefully instead of failing abruptly.
-
----
-
-## 15. Metrics and Success Indicators
-
-### 15.1 Engagement Metrics
-
-- Daily active users
-- Return rate
-- Session length
-- Puzzles completed per session
-- Hint usage frequency
-
-### 15.2 Retention Metrics
-
-- Day 1 / Day 7 / Day 30 retention
-- Streak continuation rate
-- Repeat participation in daily challenge
-
-### 15.3 Game Quality Metrics
-
-- Puzzle solve rate
-- Rage-quit rate after failed rounds
-- Hint overuse rate
-- Multiplayer session completion rate
-
----
-
-## 16. Release Criteria
-
-The initial release should include:
-
-- core gameplay,
-- one polished mode,
-- hint system,
-- lives system,
-- scoring,
-- basic profile/stats,
-- and a clean visual design.
-
-A later release can add:
-
-- multiplayer,
-- daily challenge,
-- progression systems,
-- and broader category support.
-
----
-
-## 17. Product Principles
-
-1. Preserve nostalgia.
-2. Keep rules simple.
-3. Make progress visible.
-4. Keep content trustworthy.
-5. Design for mobile first.
-6. Support future expansion.
-7. Avoid clutter.
-8. Make every hint feel valuable.
-9. Keep the game fair.
-10. Make the app feel premium.
-
----
-
-## 18. Summary
-
-This project is a modern digital version of the classic Bollywood notebook game, designed as a scalable mobile entertainment product. The app should preserve the original game’s emotional appeal while adding structure, progression, multiplayer, and a premium visual identity. The PRD defines the product as a fun, nostalgic, competitive, and expandable word-guessing experience centered around movie titles, actors, actresses, and songs.
+## 8. Standalone Future Modules (On-Hold Index)
+
+Detailed standalone specifications are located in [`features/`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/):
+- **F-01:** Auto Video Chapters & Timestamps ([`features/01_auto_chapters_and_timestamps.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/01_auto_chapters_and_timestamps.md))
+- **F-02:** AI Thumbnail Concept & Visual Hook Studio ([`features/02_ai_thumbnail_concept_studio.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/02_ai_thumbnail_concept_studio.md))
+- **F-03:** YouTube Shorts & Reels Viral Mode ([`features/03_shorts_and_reels_viral_mode.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/03_shorts_and_reels_viral_mode.md))
+- **F-04:** YouTube URL & Whisper Audio Ingestion ([`features/04_youtube_url_and_whisper_ingestion.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/04_youtube_url_and_whisper_ingestion.md))
+- **F-05:** Creator Persona & Tone Customizer ([`features/05_creator_persona_and_tone_customizer.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/05_creator_persona_and_tone_customizer.md))
+- **F-06:** 1-Click YouTube Studio Export (OAuth) ([`features/06_youtube_studio_oauth_export.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/06_youtube_studio_oauth_export.md))
+- **F-07:** Keyword Search Volume & Competition Insights ([`features/07_keyword_search_volume_insights.md`](file:///C:/Users/sujal/Documents/Projects/MetaGen-Production/features/07_keyword_search_volume_insights.md))

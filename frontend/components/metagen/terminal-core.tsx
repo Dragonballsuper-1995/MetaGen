@@ -25,6 +25,11 @@ interface TerminalCoreProps {
   onScriptChange?: (script: string) => void
   selectedModel?: ModelChoice
   onModelChange?: (model: ModelChoice) => void
+  streamTokens?: string
+  streamProgressPercent?: number
+  streamTags?: string[] | null
+  streamError?: string | null
+  onRetry?: () => void
 }
 
 const SAMPLE_PRESETS = [
@@ -57,6 +62,11 @@ export function TerminalCore({
   onScriptChange,
   selectedModel = "auto",
   onModelChange,
+  streamTokens = "",
+  streamProgressPercent,
+  streamTags = null,
+  streamError = null,
+  onRetry,
 }: TerminalCoreProps) {
   const [script, setScript] = React.useState("")
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -310,13 +320,23 @@ export function TerminalCore({
       {/* 2. LOADING STAGE */}
       {appState === "loading" && (
         <div className="w-full max-w-3xl">
-          <LoadingMatrix scriptSnippet={script} />
+          <LoadingMatrix
+            scriptSnippet={script}
+            streamTokens={streamTokens}
+            streamProgressPercent={streamProgressPercent}
+            streamTags={streamTags}
+            error={streamError}
+            onRetry={onRetry}
+            onCancel={onReset}
+          />
         </div>
       )}
 
-      {/* 3. BENTO GRID RESULTS STAGE */}
+      {/* 3. STUDIO RESULTS STAGE */}
       {appState === "output" && result && (
-        <OutputGrid result={result} sourceScript={script} onReset={onReset} />
+        <div className="w-full h-full min-h-0 flex flex-col">
+          <OutputGrid result={result} sourceScript={script} onReset={onReset} />
+        </div>
       )}
     </div>
   )

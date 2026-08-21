@@ -11,12 +11,19 @@ frontend/out/
 # Python & Environment
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 .env
 .env.*
 !.env.example
 .venv/
 venv/
 env/
+.pytest_cache/
+*.pytest_cache/
+.coverage
+htmlcov/
 
 # Massive Model Files & HF Cache
 backend/model/
@@ -32,11 +39,13 @@ Thumbs.db
 
 # Logs
 *.log
+app.log
 backend/app.log
 backend/.env
 frontend/.env.local
 frontend/.env.production
-# Ignored tracking files
+
+# Ignored tracking and scratch files
 CONTEXT.md
 DEPLOYMENT_PROGRESS.md
 models.md

@@ -50,11 +50,9 @@ export function TelemetryRibbon({
       {/* Right: Telemetry Metrics */}
       <div className="flex items-center gap-3 sm:gap-5 text-[11px] uppercase">
         {status === "output" && (
-          <div className="flex items-center gap-1 text-primary font-bold">
-            <span className="w-4 h-4 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[9px]">
-              {seoScore}
-            </span>
-            <span>SEO SCORE</span>
+          <div className="flex items-center gap-1.5 text-primary font-bold">
+            <span className="font-bold text-[12px] text-emerald-500 dark:text-emerald-400">{seoScore}%</span>
+            <span className="text-[10px] tracking-wider text-muted-foreground">SEO SCORE</span>
           </div>
         )}
 

@@ -72,12 +72,12 @@ export function TitleVariants({
   }
 
   return (
-    <div className="studio-card p-5 flex flex-col gap-4">
+    <div className="bento-card p-5 md:p-6 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
+          <span className="dm-label text-muted-foreground">
             A/B Title Hook Angles ({variants.length} Generated)
           </span>
         </div>

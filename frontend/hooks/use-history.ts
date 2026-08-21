@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { HistoryItem, MetadataResult } from "@/lib/types"
 
 const STORAGE_KEY = "metagen_neural_cache_v2"
@@ -30,9 +30,9 @@ export function useHistory() {
     }
   }, [history, isLoaded])
 
-  const addToHistory = (result: MetadataResult, script: string) => {
+  const addToHistory = useCallback((result: MetadataResult, script: string) => {
     const newItem: HistoryItem = {
-      id: crypto.randomUUID(),
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       title: result.title,
       description: result.description,
       tags: result.tags,
@@ -42,19 +42,23 @@ export function useHistory() {
       script,
       time: new Date().toISOString(),
     }
-    
-    setHistory((prev) => [newItem, ...prev].slice(0, 50)) // Keep last 50
-  }
 
-  const clearHistory = () => {
+    setHistory((prev) => [newItem, ...prev].slice(0, 50)) // Keep last 50
+  }, [])
+
+  const clearHistory = useCallback(() => {
     setHistory([])
-    localStorage.removeItem(STORAGE_KEY)
-  }
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch (e) {
+      console.error("Failed to clear Neural Cache", e)
+    }
+  }, [])
 
   return {
     history,
     addToHistory,
     clearHistory,
-    isLoaded
+    isLoaded,
   }
 }

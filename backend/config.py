@@ -142,7 +142,11 @@ class Settings(BaseSettings):
     groq_api_key: str = Field(default="", description="Groq API key for lightning-fast inference")
     groq_model: str = Field(
         default="openai/gpt-oss-120b",
-        description="Groq model ID for cloud inference (e.g. openai/gpt-oss-120b)",
+        description="Primary Groq model ID for cloud inference (e.g. openai/gpt-oss-120b)",
+    )
+    groq_fallback_models: list[str] = Field(
+        default=["openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
+        description="Ordered list of cloud fallback models if primary model encounters rate-limits or errors",
     )
     youtube_api_key: str = Field(default="", description="YouTube Data API key")
 
