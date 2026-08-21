@@ -83,15 +83,15 @@ export function TelemetryRibbon({
                   <div className="flex flex-col gap-1 text-[11px] font-mono text-foreground/90">
                     <div className="flex items-center justify-between">
                       <span>1. openai/gpt-oss-20b</span>
-                      <span className="text-emerald-500 font-semibold">1000 T/s (0.59s)</span>
+                      <span className="text-emerald-500 font-semibold">1000 T/s (Turbo)</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>2. qwen/qwen3.6-27b</span>
-                      <span className="text-emerald-500 font-semibold">500 T/s (0.63s)</span>
+                      <span>2. openai/gpt-oss-120b</span>
+                      <span className="text-emerald-500 font-semibold">500 T/s (Flagship)</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>3. Mistral 7B (GGUF)</span>
-                      <span className="text-zinc-500">Local CPU Offline</span>
+                      <span className="text-zinc-400">On-Device Standby</span>
                     </div>
                   </div>
                 </div>
