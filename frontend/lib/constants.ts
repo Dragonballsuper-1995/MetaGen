@@ -5,10 +5,25 @@ export const POLL_INTERVAL = 1500; // ms
 let _resolvedApiUrl: string | null = null;
 
 async function probe(url: string): Promise<boolean> {
+  // Prevent browser mixed-content errors if running on HTTPS
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    url.startsWith("http://")
+  ) {
+    return false;
+  }
+
   try {
-    const res = await fetch(new URL('/health', url).toString(), { method: 'GET' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(new URL("/health", url).toString(), {
+      method: "GET",
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
     return res.ok;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -16,13 +31,23 @@ async function probe(url: string): Promise<boolean> {
 export async function resolveApiUrl(): Promise<string> {
   if (_resolvedApiUrl) return _resolvedApiUrl;
 
+  const isLocalEnv =
+    process.env.NODE_ENV === "development" ||
+    (typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"));
+
   const candidates: string[] = [];
   if (process.env.NEXT_PUBLIC_API_URL) candidates.push(process.env.NEXT_PUBLIC_API_URL);
-  // Common local fallbacks
-  candidates.push('http://localhost:8000');
-  candidates.push('http://127.0.0.1:8000');
-  // Docker Desktop host alias (Windows/Mac)
-  candidates.push('http://host.docker.internal:8000');
+
+  if (isLocalEnv) {
+    candidates.push("http://localhost:8000");
+    candidates.push("http://127.0.0.1:8000");
+    candidates.push("http://host.docker.internal:8000");
+  }
+
+  // Always include primary production cloud backend
+  candidates.push("https://sujalchhajed925-metagen.hf.space");
 
   for (const c of candidates) {
     try {
@@ -31,14 +56,18 @@ export async function resolveApiUrl(): Promise<string> {
         _resolvedApiUrl = c;
         return c;
       }
-    } catch (e) {
-      // ignore and try next
+    } catch {
+      // try next candidate
     }
   }
 
-  _resolvedApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  _resolvedApiUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    (isLocalEnv ? "http://localhost:8000" : "https://sujalchhajed925-metagen.hf.space");
   return _resolvedApiUrl;
 }
 
 // Synchronous fallback used at build-time/runtime when async resolution isn't awaited
-export const API_URL_FALLBACK = process.env.NEXT_PUBLIC_API_URL || 'https://sujalchhajed925-metagen.hf.space';
+export const API_URL_FALLBACK =
+  process.env.NEXT_PUBLIC_API_URL || "https://sujalchhajed925-metagen.hf.space";
+
