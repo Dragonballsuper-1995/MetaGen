@@ -1880,46 +1880,54 @@ def _llm_call(
     groq = _get_groq_client()
     normalized_choice = _normalize_model_choice(model_choice)
 
-    if normalized_choice != "mistral" and groq:
-        candidates = _get_groq_candidate_models(normalized_choice)
-        for model_id in candidates:
-            try:
-                inference_start = perf_counter()
-                groq_system_prompt = (
-                    system_prompt
-                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
-                    "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
-                    "Do NOT add conversational text. Output the raw JSON object directly."
+    if normalized_choice != "mistral":
+        if groq is None:
+            if _should_use_cpu_fast_profile():
+                raise RuntimeError(
+                    "Groq API key is not configured on the server. "
+                    "Please add GROQ_API_KEY to Hugging Face Space secrets (Settings -> Secrets) or select 'Mistral (Local CPU)'."
                 )
-                groq_max_tokens = max(max_tokens, 2048)
-                groq_params: dict[str, Any] = {
-                    "messages": [
-                        {"role": "system", "content": groq_system_prompt},
-                        {"role": "user", "content": user_msg},
-                    ],
-                    "model": model_id,
-                    "max_tokens": groq_max_tokens,
-                    "temperature": settings.temperature if temperature is None else temperature,
-                    "top_p": settings.top_p,
-                }
-                if "gpt-oss" in model_id.lower():
-                    groq_params["response_format"] = {"type": "json_object"}
+            logger.warning("Groq API key not configured; falling back to local GPU.")
+        else:
+            candidates = _get_groq_candidate_models(normalized_choice)
+            for model_id in candidates:
+                try:
+                    inference_start = perf_counter()
+                    groq_system_prompt = (
+                        system_prompt
+                        + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                        "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                        "Do NOT add conversational text. Output the raw JSON object directly."
+                    )
+                    groq_max_tokens = max(max_tokens, 2048)
+                    groq_params: dict[str, Any] = {
+                        "messages": [
+                            {"role": "system", "content": groq_system_prompt},
+                            {"role": "user", "content": user_msg},
+                        ],
+                        "model": model_id,
+                        "max_tokens": groq_max_tokens,
+                        "temperature": settings.temperature if temperature is None else temperature,
+                        "top_p": settings.top_p,
+                    }
+                    if "gpt-oss" in model_id.lower():
+                        groq_params["response_format"] = {"type": "json_object"}
 
-                response = groq.chat.completions.create(**groq_params)
-                elapsed = perf_counter() - inference_start
-                result_text = response.choices[0].message.content.strip()
-                _last_used_model_name = _human_model_name(model_id)
-                logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, model_id)
-                return _parse_json_safe(result_text)
-            except Exception as e:
-                logger.warning("Groq model %s failed: %s", model_id, e)
-                if normalized_choice != "auto" and len(candidates) == 1:
-                    logger.error("Explicit Groq model choice failed: %s", e)
-                    raise RuntimeError(f"Groq generation failed for {model_id}: {e}") from e
+                    response = groq.chat.completions.create(**groq_params)
+                    elapsed = perf_counter() - inference_start
+                    result_text = response.choices[0].message.content.strip()
+                    _last_used_model_name = _human_model_name(model_id)
+                    logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, model_id)
+                    return _parse_json_safe(result_text)
+                except Exception as e:
+                    logger.warning("Groq model %s failed: %s", model_id, e)
+                    if normalized_choice != "auto" and len(candidates) == 1:
+                        logger.error("Explicit Groq model choice failed: %s", e)
+                        raise RuntimeError(f"Groq generation failed for {model_id}: {e}") from e
 
-        if normalized_choice != "auto":
-            raise RuntimeError(f"Groq generation failed for requested model choice '{model_choice}'")
-        logger.warning("All Groq candidate models failed; falling back to local model.")
+            if normalized_choice != "auto":
+                raise RuntimeError(f"Groq generation failed for requested model choice '{model_choice}'")
+            logger.warning("All Groq candidate models failed; falling back to local model.")
 
     # Fallback / explicit local llama-cpp (Custom Mistral 7B)
     llm = get_llm()
@@ -1954,83 +1962,91 @@ def _llm_stream(
     groq = _get_groq_client()
     normalized_choice = _normalize_model_choice(model_choice)
 
-    if normalized_choice != "mistral" and groq:
-        candidates = _get_groq_candidate_models(normalized_choice)
-        for model_id in candidates:
-            try:
-                start = perf_counter()
-                token_count = 0
-                groq_system_prompt = (
-                    system_prompt
-                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
-                    "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
-                    "Do NOT add conversational text. Output the raw JSON object directly."
+    if normalized_choice != "mistral":
+        if groq is None:
+            if _should_use_cpu_fast_profile():
+                raise RuntimeError(
+                    "Groq API key is not configured on the server. "
+                    "Please add GROQ_API_KEY to Hugging Face Space secrets (Settings -> Secrets) or select 'Mistral (Local CPU)'."
                 )
-                groq_max_tokens = max(max_tokens, 2048)
-                groq_params: dict[str, Any] = {
-                    "messages": [
-                        {"role": "system", "content": groq_system_prompt},
-                        {"role": "user", "content": user_msg},
-                    ],
-                    "model": model_id,
-                    "max_tokens": groq_max_tokens,
-                    "temperature": settings.temperature,
-                    "top_p": settings.top_p,
-                    "stream": True,
-                }
-                if "gpt-oss" in model_id.lower():
-                    groq_params["response_format"] = {"type": "json_object"}
-
-                response = groq.chat.completions.create(**groq_params)
-                in_think_block = False
-                for chunk in response:
-                    content = chunk.choices[0].delta.content
-                    if not content:
-                        continue
-
-                    # Sanitize unicode dashes and non-breaking spaces
-                    content = (
-                        content.replace("\u2011", "-")
-                        .replace("\u2013", "-")
-                        .replace("\u2014", "-")
-                        .replace("\u00a0", " ")
+            logger.warning("Groq API key not configured; falling back to local GPU.")
+        else:
+            candidates = _get_groq_candidate_models(normalized_choice)
+            for model_id in candidates:
+                try:
+                    start = perf_counter()
+                    token_count = 0
+                    groq_system_prompt = (
+                        system_prompt
+                        + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                        "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                        "Do NOT add conversational text. Output the raw JSON object directly."
                     )
+                    groq_max_tokens = max(max_tokens, 2048)
+                    groq_params: dict[str, Any] = {
+                        "messages": [
+                            {"role": "system", "content": groq_system_prompt},
+                            {"role": "user", "content": user_msg},
+                        ],
+                        "model": model_id,
+                        "max_tokens": groq_max_tokens,
+                        "temperature": settings.temperature,
+                        "top_p": settings.top_p,
+                        "stream": True,
+                    }
+                    if "gpt-oss" in model_id.lower():
+                        groq_params["response_format"] = {"type": "json_object"}
 
-                    # Suppress and strip reasoning <think>...</think> blocks from models like Qwen
-                    if "<think>" in content:
-                        in_think_block = True
-                    if in_think_block:
-                        if "</think>" in content:
-                            in_think_block = False
-                            content = content.split("</think>", 1)[1]
-                            if not content.strip():
-                                continue
-                        else:
+                    response = groq.chat.completions.create(**groq_params)
+                    in_think_block = False
+                    for chunk in response:
+                        content = chunk.choices[0].delta.content
+                        if not content:
                             continue
 
-                    token_count += 1
-                    yield content
+                        # Sanitize unicode dashes and non-breaking spaces
+                        content = (
+                            content.replace("\u2011", "-")
+                            .replace("\u2013", "-")
+                            .replace("\u2014", "-")
+                            .replace("\u00a0", " ")
+                        )
 
-                if token_count > 0:
-                    _last_used_model_name = _human_model_name(model_id)
-                    logger.info(
-                        "Groq stream completed in %.2fs (%d chunks, model=%s)",
-                        perf_counter() - start,
-                        token_count,
-                        model_id,
-                    )
-                    return
+                        # Suppress and strip reasoning <think>...</think> blocks from models like Qwen
+                        if "<think>" in content:
+                            in_think_block = True
+                        if in_think_block:
+                            if "</think>" in content:
+                                in_think_block = False
+                                content = content.split("</think>", 1)[1]
+                                if not content.strip():
+                                    continue
+                            else:
+                                continue
 
-                logger.warning("Groq stream for model %s produced 0 content chunks; attempting next candidate", model_id)
-            except Exception as e:
-                logger.warning("Groq streaming for model %s failed: %s", model_id, e)
-                if normalized_choice != "auto" and len(candidates) == 1:
-                    logger.error("Explicit Groq stream failed: %s", e)
-                    raise RuntimeError(f"Groq streaming failed for {model_id}: {e}") from e
+                        token_count += 1
+                        yield content
 
-        if normalized_choice != "auto":
-            raise RuntimeError(f"Groq streaming failed for requested model choice '{model_choice}'")
-        logger.warning("All Groq streaming candidates failed; falling back to local model.")
+                    if token_count > 0:
+                        _last_used_model_name = _human_model_name(model_id)
+                        logger.info(
+                            "Groq stream completed in %.2fs (%d chunks, model=%s)",
+                            perf_counter() - start,
+                            token_count,
+                            model_id,
+                        )
+                        return
+
+                    logger.warning("Groq stream for model %s produced 0 content chunks; attempting next candidate", model_id)
+                except Exception as e:
+                    logger.warning("Groq streaming for model %s failed: %s", model_id, e)
+                    if normalized_choice != "auto" and len(candidates) == 1:
+                        logger.error("Explicit Groq stream failed: %s", e)
+                        raise RuntimeError(f"Groq streaming failed for {model_id}: {e}") from e
+
+            if normalized_choice != "auto":
+                raise RuntimeError(f"Groq streaming failed for requested model choice '{model_choice}'")
+            logger.warning("All Groq streaming candidates failed; falling back to local model.")
 
     # Fallback / explicit local llama-cpp (Custom Mistral 7B)
     llm = get_llm()

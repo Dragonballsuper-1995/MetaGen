@@ -261,6 +261,23 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/health/runtime")
+async def runtime_health_check():
+    groq_key = (
+        (getattr(settings, "groq_api_key", None) or "").strip()
+        or os.environ.get("GROQ_API_KEY", "").strip()
+        or os.environ.get("GROQ_KEY", "").strip()
+    )
+    return {
+        "status": "online",
+        "groq_configured": bool(groq_key),
+        "groq_key_preview": f"{groq_key[:8]}...{groq_key[-4:]}" if groq_key else None,
+        "groq_primary_model": settings.groq_model,
+        "groq_fallback_models": settings.groq_fallback_models,
+        "generation_strategy": settings.generation_strategy,
+    }
+
+
 @app.get("/health/warmup", response_model=WarmupStatusResponse)
 async def warmup_health_check():
     if app.state.model_warm_ready:
