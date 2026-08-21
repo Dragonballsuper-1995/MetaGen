@@ -402,7 +402,12 @@ async def get_status(task_id: str):
 @app.post("/api/generate/stream", dependencies=[Depends(verify_api_key)])
 @limiter.limit(settings.rate_limit)
 async def stream_generation(request: Request, req: VideoRequest):
-    await _ensure_model_warm(app)
+    from backend.ai_engine import _get_groq_client, _normalize_model_choice
+
+    # Only block on local CPU GGUF warmup if explicitly requesting Mistral or if Groq is unconfigured
+    normalized = _normalize_model_choice(req.model)
+    if normalized == "mistral" or not _get_groq_client():
+        await _ensure_model_warm(app)
 
     async def event_generator():
         from backend.ai_engine import ScriptValidationError, generate_youtube_metadata_stream
@@ -448,11 +453,13 @@ async def stream_generation(request: Request, req: VideoRequest):
 )
 @limiter.limit(settings.rate_limit)
 async def generate_title_variants(request: Request, req: TitleVariantsRequest):
-    from backend.ai_engine import ScriptValidationError
+    from backend.ai_engine import ScriptValidationError, _get_groq_client, _normalize_model_choice
     from backend.ai_engine import generate_title_variants as build_title_variants
 
     try:
-        await _ensure_model_warm(app)
+        normalized = _normalize_model_choice(req.model)
+        if normalized == "mistral" or not _get_groq_client():
+            await _ensure_model_warm(app)
         titles = build_title_variants(req.text, req.base_title, req.count, model_choice=req.model)
         return TitleVariantsResponse(titles=titles)
     except ScriptValidationError as exc:

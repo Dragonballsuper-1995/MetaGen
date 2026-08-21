@@ -1683,6 +1683,16 @@ def _parse_json_safe(text: str) -> dict:
     function tries progressively aggressive fixups before giving up.
     """
     cleaned_text = (text or "").strip()
+    if "<think>" in cleaned_text and "</think>" in cleaned_text:
+        cleaned_text = cleaned_text.split("</think>", 1)[1].strip()
+
+    cleaned_text = (
+        cleaned_text.replace("\u2011", "-")
+        .replace("\u2013", "-")
+        .replace("\u2014", "-")
+        .replace("\u00a0", " ")
+    )
+
     if cleaned_text.startswith("```"):
         cleaned_text = re.sub(r"^```(?:json)?", "", cleaned_text, flags=re.IGNORECASE).strip()
         cleaned_text = re.sub(r"```$", "", cleaned_text).strip()
@@ -1958,11 +1968,34 @@ def _llm_stream(
                     top_p=settings.top_p,
                     stream=True,
                 )
+                in_think_block = False
                 for chunk in response:
                     content = chunk.choices[0].delta.content
-                    if content:
-                        token_count += 1
-                        yield content
+                    if not content:
+                        continue
+
+                    # Sanitize unicode dashes and non-breaking spaces
+                    content = (
+                        content.replace("\u2011", "-")
+                        .replace("\u2013", "-")
+                        .replace("\u2014", "-")
+                        .replace("\u00a0", " ")
+                    )
+
+                    # Suppress and strip reasoning <think>...</think> blocks from models like Qwen
+                    if "<think>" in content:
+                        in_think_block = True
+                    if in_think_block:
+                        if "</think>" in content:
+                            in_think_block = False
+                            content = content.split("</think>", 1)[1]
+                            if not content.strip():
+                                continue
+                        else:
+                            continue
+
+                    token_count += 1
+                    yield content
 
                 _last_used_model_name = _human_model_name(model_id)
                 logger.info(

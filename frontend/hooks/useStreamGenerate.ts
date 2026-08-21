@@ -6,7 +6,7 @@ import { getHeaders } from "@/lib/api";
 import type { GenerationStatus, HistoryItem, MetadataResult, ModelChoice } from "@/lib/types";
 import { parseJsonDataLineBuffer } from "@/lib/sse";
 
-const FIRST_STREAM_ACTIVITY_TIMEOUT_MS = 30_000;
+const FIRST_STREAM_ACTIVITY_TIMEOUT_MS = 45_000;
 const FIRST_STREAM_ACTIVITY_RETRY_COUNT = 1;
 const DEFAULT_STREAM_TARGET_TOKENS = 220;
 const STREAM_TARGET_MIN_TOKENS = 120;

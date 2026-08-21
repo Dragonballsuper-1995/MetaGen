@@ -235,98 +235,97 @@ export function YoutubePreview({
                   </div>
                 </div>
 
-                {/* ── CARD 2: REALISTIC NEIGHBOR (F1 Grand Prix) ── */}
-                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/80 opacity-85 hover:opacity-100 transition-opacity">
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-red-950 via-zinc-900 to-black border border-white/5 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-radial from-red-500/10 via-transparent to-transparent" />
-                    <span className="text-xs font-bold text-red-500/80 uppercase tracking-widest font-mono">
-                      FORMULA 1
+                {/* ── CARD 2: REALISTIC NEIGHBOR (Muted Monochrome Wireframe) ── */}
+                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/25 border border-zinc-800/40 text-zinc-500 select-none">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900/80 border border-zinc-800/60 flex items-center justify-center">
+                    <span className="text-[11px] font-mono text-zinc-600 uppercase tracking-wider">
+                      FORMULA 1 • DUTCH GP
                     </span>
-                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 text-white font-mono text-[10px] font-bold rounded">
+                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/70 text-zinc-400 font-mono text-[10px] rounded">
                       13:14
                     </div>
                   </div>
 
                   <div className="flex gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-[10px] flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/40 flex items-center justify-center text-zinc-400 font-semibold text-xs flex-shrink-0">
                       F1
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                      <h4 className="font-sans text-xs sm:text-sm font-semibold text-white leading-snug line-clamp-2">
+                      <h4 className="font-sans text-xs sm:text-sm font-medium text-zinc-400 leading-snug line-clamp-2">
                         Drivers Look Ahead to the Weekend | 2026 Dutch Grand Prix
                       </h4>
-                      <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-500">
                         <span>FORMULA 1</span>
-                        <CheckCircle2 className="w-3 h-3 text-zinc-400 inline" />
+                        <CheckCircle2 className="w-3 h-3 text-zinc-600 inline" />
                       </div>
-                      <div className="text-[11px] text-zinc-400">
+                      <div className="text-[11px] text-zinc-600">
                         <span>13K views</span> • <span>1 hour ago</span>
                       </div>
                     </div>
-                    <MoreVertical className="w-3.5 h-3.5 text-zinc-500" />
+                    <MoreVertical className="w-3.5 h-3.5 text-zinc-600" />
                   </div>
                 </div>
 
-                {/* ── CARD 3: REALISTIC NEIGHBOR (Distributed Systems) ── */}
-                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/80 opacity-85 hover:opacity-100 transition-opacity">
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-emerald-950 via-zinc-900 to-black border border-white/5 flex items-center justify-center">
-                    <span className="text-xs font-bold text-emerald-500/80 uppercase tracking-widest font-mono">
+                {/* ── CARD 3: REALISTIC NEIGHBOR (Muted Monochrome Wireframe) ── */}
+                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/25 border border-zinc-800/40 text-zinc-500 select-none">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900/80 border border-zinc-800/60 flex items-center justify-center">
+                    <span className="text-[11px] font-mono text-zinc-600 uppercase tracking-wider">
                       50M REQ/MO ($15)
                     </span>
-                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/85 text-white font-mono text-[10px] font-bold rounded">
+                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/70 text-zinc-400 font-mono text-[10px] rounded">
                       2:26:16
                     </div>
                   </div>
 
                   <div className="flex gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/40 flex items-center justify-center text-zinc-400 font-semibold text-xs flex-shrink-0">
                       C
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                      <h4 className="font-sans text-xs sm:text-sm font-semibold text-white leading-snug line-clamp-2">
+                      <h4 className="font-sans text-xs sm:text-sm font-medium text-zinc-400 leading-snug line-clamp-2">
                         50 Million HTTP Requests/Month on a $15 Budget (First 2 Hours)
                       </h4>
-                      <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-500">
                         <span>Coddev</span>
-                        <CheckCircle2 className="w-3 h-3 text-zinc-400 inline" />
+                        <CheckCircle2 className="w-3 h-3 text-zinc-600 inline" />
                       </div>
-                      <div className="text-[11px] text-zinc-400">
+                      <div className="text-[11px] text-zinc-600">
                         <span>34K views</span> • <span>5 days ago</span>
                       </div>
                     </div>
-                    <MoreVertical className="w-3.5 h-3.5 text-zinc-500" />
+                    <MoreVertical className="w-3.5 h-3.5 text-zinc-600" />
                   </div>
                 </div>
 
-                {/* ── CARD 4: REALISTIC NEIGHBOR (Live Stream) ── */}
-                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/40 border border-zinc-800/80 opacity-85 hover:opacity-100 transition-opacity">
-                  <div className="relative aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-amber-950 via-zinc-900 to-black border border-white/5 flex items-center justify-center">
-                    <span className="text-xs font-bold text-amber-500/80 uppercase tracking-widest font-mono">
+                {/* ── CARD 4: REALISTIC NEIGHBOR (Muted Monochrome Wireframe) ── */}
+                <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-zinc-900/25 border border-zinc-800/40 text-zinc-500 select-none">
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900/80 border border-zinc-800/60 flex items-center justify-center">
+                    <span className="text-[11px] font-mono text-zinc-600 uppercase tracking-wider">
                       LIVE DEV STREAM
                     </span>
-                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-red-600 text-white font-mono text-[9px] font-bold rounded flex items-center gap-1">
-                      <Radio className="w-2.5 h-2.5 animate-pulse" />
+                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/70 text-zinc-400 font-mono text-[9px] font-medium rounded flex items-center gap-1">
+                      <Radio className="w-2.5 h-2.5 text-zinc-500" />
                       <span>LIVE</span>
                     </div>
                   </div>
 
                   <div className="flex gap-2.5 pt-1">
-                    <div className="w-8 h-8 rounded-full bg-amber-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/40 flex items-center justify-center text-zinc-400 font-semibold text-xs flex-shrink-0">
                       T
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                      <h4 className="font-sans text-xs sm:text-sm font-semibold text-white leading-snug line-clamp-2">
+                      <h4 className="font-sans text-xs sm:text-sm font-medium text-zinc-400 leading-snug line-clamp-2">
                         An Update, Stealing from Omarchy Quad, and New Architecture
                       </h4>
-                      <div className="flex items-center gap-1 text-[11px] text-zinc-400">
+                      <div className="flex items-center gap-1 text-[11px] text-zinc-500">
                         <span>Chris Titus Tech</span>
-                        <CheckCircle2 className="w-3 h-3 text-zinc-400 inline" />
+                        <CheckCircle2 className="w-3 h-3 text-zinc-600 inline" />
                       </div>
-                      <div className="text-[11px] text-red-400 font-medium">
+                      <div className="text-[11px] text-zinc-600 font-medium">
                         <span>337 watching now</span>
                       </div>
                     </div>
-                    <MoreVertical className="w-3.5 h-3.5 text-zinc-500" />
+                    <MoreVertical className="w-3.5 h-3.5 text-zinc-600" />
                   </div>
                 </div>
               </div>
@@ -367,8 +366,8 @@ export function YoutubePreview({
 
               {/* Mobile Feed Scroll Area */}
               <div className="flex flex-col gap-4 p-3 overflow-y-auto max-h-[500px]">
-                {/* ── MOBILE VIDEO 1: YOUR GENERATED VIDEO ── */}
-                <div className="flex flex-col gap-2.5 pb-3 border-b border-zinc-900">
+                {/* ── MOBILE VIDEO 1: YOUR GENERATED VIDEO (HIGHLIGHTED) ── */}
+                <div className="flex flex-col gap-2.5 p-2 rounded-2xl bg-zinc-900/90 border-2 border-primary shadow-lg shadow-primary/10">
                   {/* Thumbnail */}
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-blue-950 via-zinc-900 to-black border border-primary/50 flex items-center justify-center">
                     <div className="w-9 h-9 rounded-full bg-primary/90 flex items-center justify-center text-white shadow-md">
@@ -391,7 +390,7 @@ export function YoutubePreview({
                     </div>
 
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                      <h4 className="font-sans text-xs font-semibold text-white leading-snug line-clamp-2">
+                      <h4 className="font-sans text-xs font-bold text-white leading-snug line-clamp-2">
                         {title}
                       </h4>
                       <div className="text-[11px] text-zinc-400">
@@ -406,30 +405,30 @@ export function YoutubePreview({
                   </div>
                 </div>
 
-                {/* ── MOBILE VIDEO 2: REALISTIC COMPETING VIDEO ── */}
-                <div className="flex flex-col gap-2.5 opacity-80">
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-red-950 via-zinc-900 to-black border border-white/10 flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-red-500/80 font-mono">
+                {/* ── MOBILE VIDEO 2: REALISTIC COMPETING VIDEO (Muted Monochrome Wireframe) ── */}
+                <div className="flex flex-col gap-2.5 p-2 rounded-2xl bg-zinc-900/20 border border-zinc-800/40 text-zinc-600 select-none">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-900/80 border border-zinc-800/60 flex items-center justify-center">
+                    <span className="text-[11px] font-mono text-zinc-600">
                       FORMULA 1 • DUTCH GP
                     </span>
-                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/85 text-white font-mono text-[10px] font-bold rounded">
+                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 text-zinc-500 font-mono text-[10px] rounded">
                       13:14
                     </div>
                   </div>
 
                   <div className="flex gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/40 text-zinc-400 flex items-center justify-center font-semibold text-xs flex-shrink-0">
                       F1
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                      <h4 className="font-sans text-xs font-semibold text-white leading-snug line-clamp-2">
+                      <h4 className="font-sans text-xs font-medium text-zinc-400 leading-snug line-clamp-2">
                         Drivers Look Ahead to the Weekend | 2026 Dutch Grand Prix
                       </h4>
-                      <div className="text-[11px] text-zinc-400">
+                      <div className="text-[11px] text-zinc-500">
                         <span>FORMULA 1</span> • <span>13K views • 1h ago</span>
                       </div>
                     </div>
-                    <MoreVertical className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                    <MoreVertical className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />
                   </div>
                 </div>
               </div>
