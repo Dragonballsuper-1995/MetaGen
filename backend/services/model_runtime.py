@@ -155,7 +155,7 @@ async def prewarm_model_runtime(target_app: FastAPI, logger) -> None:
     target_app.state.model_warm_last_attempt_utc = _utc_now_iso()
     try:
         warm_start = perf_counter()
-        _load_model_for_warmup()
+        await asyncio.wait_for(asyncio.to_thread(_load_model_for_warmup), timeout=3.0)
         warm_elapsed = perf_counter() - warm_start
         target_app.state.model_warm_ready = True
         target_app.state.model_warm_error = None
@@ -167,7 +167,7 @@ async def prewarm_model_runtime(target_app: FastAPI, logger) -> None:
         target_app.state.model_warm_error = str(exc)
         target_app.state.model_warm_duration_s = None
         target_app.state.model_warm_completed_utc = _utc_now_iso()
-        logger.warning("Model pre-warm skipped: %s", exc)
+        logger.warning("Model pre-warm skipped or deferred: %s", exc)
 
 
 def start_keep_warm_if_enabled(target_app: FastAPI, logger) -> None:
