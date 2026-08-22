@@ -338,8 +338,8 @@ export function YoutubePreview({
           <div
             className={`
               ${viewMode === "desktop" ? "flex md:hidden" : "flex"}
-              ${viewMode === "dual" ? "lg:col-span-4" : "max-w-sm mx-auto w-full"}
-              flex-col rounded-3xl bg-black text-[#F1F1F1] border-4 border-zinc-800 overflow-hidden shadow-2xl
+              ${viewMode === "dual" ? "lg:col-span-4" : "w-full mx-auto max-w-[340px]"}
+              flex-col rounded-3xl bg-black text-[#F1F1F1] border-4 border-zinc-800 shadow-2xl md:max-h-[550px] lg:max-h-[600px] overflow-hidden
             `}
           >
               {/* Phone Status Bar Simulation */}
@@ -366,7 +366,7 @@ export function YoutubePreview({
               </div>
 
               {/* Mobile Feed Scroll Area */}
-              <div className="flex flex-col gap-4 p-3 overflow-y-auto max-h-[500px]">
+              <div className="flex-1 flex flex-col gap-4 p-3 md:overflow-y-auto hide-scrollbar">
                 {/* ── MOBILE VIDEO 1: YOUR GENERATED VIDEO (HIGHLIGHTED) ── */}
                 <div className="flex flex-col gap-2.5 p-2 rounded-2xl bg-zinc-900/90 border-2 border-primary shadow-lg shadow-primary/10">
                   {/* Thumbnail */}

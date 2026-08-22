@@ -279,7 +279,12 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                   </button>
                 </div>
 
-                <Button
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md border border-border/50">
+                    {activeTitle.length} <span className="opacity-60">chars</span>
+                  </span>
+                  
+                  <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleCopy(activeTitle, "title")}
@@ -297,6 +302,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </div>
 
@@ -332,9 +338,6 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                   })}
                 </div>
               </div>
-              <span className="ml-2 text-[11px] font-mono text-muted-foreground whitespace-nowrap flex-shrink-0">
-                {activeTitle.length} chars
-              </span>
             </div>
           </div>
 
@@ -432,8 +435,8 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
 
       {/* ─── TAB 2: YOUTUBE SIMULATOR ─────────────────────────────────────────── */}
       {activeTab === "simulator" && (
-        <div className="flex-1 flex flex-col justify-center items-center overflow-y-auto max-h-full py-2">
-          <div className="w-full">
+        <div className="flex-1 flex flex-col items-center py-2 min-h-0">
+          <div className="w-full h-full min-h-0">
             <YoutubePreview
               title={activeTitle}
               description={result.description}

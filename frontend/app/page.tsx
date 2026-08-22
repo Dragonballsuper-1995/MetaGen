@@ -87,7 +87,7 @@ export default function Page() {
   const byteCount = new Blob([currentScript]).size
 
   return (
-    <div className="h-screen max-h-screen relative flex flex-col overflow-hidden selection:bg-primary/25">
+    <div className="h-[100dvh] max-h-[100dvh] relative flex flex-col overflow-hidden selection:bg-primary/25">
       {/* Ambient Dot Grid Canvas */}
       <DotGridCanvas />
 

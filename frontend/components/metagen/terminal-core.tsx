@@ -348,7 +348,9 @@ export function TerminalCore({
       {/* 3. STUDIO RESULTS STAGE */}
       {appState === "output" && result && (
         <div className="w-full h-full min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0" />
           <OutputGrid result={result} sourceScript={script} onReset={onReset} />
+          <div className="flex-1 min-h-0" />
         </div>
       )}
     </div>
