@@ -98,11 +98,11 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
   const wordCount = sourceScript.trim() ? sourceScript.split(/\s+/).filter(Boolean).length : 0
 
   return (
-    <div className="flex flex-col h-full w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none">
+    <div className="flex flex-col w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none">
       {/* ─── TOP CONTROL BAR ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 border-b border-border/80 pb-3 flex-shrink-0">
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 border-b border-border/80 pb-3 flex-shrink-0">
         {/* Left: View Tabs + Source Script Trigger */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap justify-center items-center gap-2">
           {/* Tab Switcher Pills */}
           <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border">
             <button
@@ -134,7 +134,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
           {sourceScript && (
             <button
               onClick={() => setIsSourceModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-muted/30 hover:bg-muted/70 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-muted/30 hover:bg-muted/70 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
             >
               <FileText className="w-3.5 h-3.5 text-primary" />
               <span>Source ({wordCount}w)</span>
@@ -143,7 +143,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
         </div>
 
         {/* Right: Hover-Expanded SEO Scorecard + Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto">
           {/* Interactive SEO Score Badge (Hover or Click expands scorecard) */}
           <div
             className="relative"
@@ -166,7 +166,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
 
             {/* Hover SEO Popover Card */}
             {isSeoPopoverOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 p-4 rounded-2xl bg-surface dark:bg-zinc-900 border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-3">
+              <div className="absolute left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 top-full mt-2 w-72 p-4 rounded-2xl bg-surface dark:bg-zinc-900 border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-3">
                 <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
                   <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
                     SEO Score Breakdown
@@ -244,7 +244,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
           {/* HERO SINGLE-TITLE CARD WITH ANGLE SWITCHER */}
           <div className="bento-card p-4 sm:p-5 flex flex-col gap-2.5 flex-shrink-0">
             {/* Title Card Header */}
-            <div className="flex items-center justify-between border-b border-border pb-2.5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-2.5 gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="dm-label text-muted-foreground">Optimized Title</span>
 
@@ -256,26 +256,28 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
               </div>
 
               {/* Angle Carousel Navigation & Copy */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] text-muted-foreground font-mono mr-1">
-                  {selectedAngleIdx + 1} / {titleAngles.length}
-                </span>
+              <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-muted-foreground font-mono mr-1 whitespace-nowrap flex-shrink-0">
+                    {selectedAngleIdx + 1} / {titleAngles.length}
+                  </span>
 
-                <button
-                  onClick={handlePrevTitle}
-                  className="p-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  title="Previous Angle"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
+                  <button
+                    onClick={handlePrevTitle}
+                    className="p-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Previous Angle"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
 
-                <button
-                  onClick={handleNextTitle}
-                  className="p-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  title="Next Angle"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                  <button
+                    onClick={handleNextTitle}
+                    className="p-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    title="Next Angle"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
 
                 <Button
                   variant="outline"
@@ -304,8 +306,8 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
             </h2>
 
             {/* Bottom Angle Switcher Pills */}
-            <div className="flex items-center gap-1.5 pt-2 border-t border-border/60 flex-wrap">
-              <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-1">
+            <div className="flex items-center gap-1.5 pt-2 border-t border-border/60 overflow-x-auto hide-scrollbar max-w-[90vw] md:max-w-full">
+              <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-1 whitespace-nowrap flex-shrink-0">
                 Angles:
               </span>
               {titleAngles.map((angle, idx) => {
@@ -315,7 +317,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                   <button
                     key={angle.id}
                     onClick={() => setSelectedAngleIdx(idx)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                       isSelected
                         ? "bg-primary text-white font-semibold shadow-xs"
                         : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
@@ -326,16 +328,16 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                   </button>
                 )
               })}
-              <span className="ml-auto text-[11px] font-mono text-muted-foreground">
+              <span className="ml-auto text-[11px] font-mono text-muted-foreground whitespace-nowrap flex-shrink-0 pl-2">
                 {activeTitle.length} chars
               </span>
             </div>
           </div>
 
-          {/* DUAL-PANE BODY: DESCRIPTION & TAGS (Fills remaining height) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1 min-h-0">
+          {/* DUAL-PANE BODY: DESCRIPTION & TAGS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {/* Description Card */}
-            <div className="bento-card p-4 flex flex-col gap-2.5 min-h-0 h-full">
+            <div className="bento-card p-4 flex flex-col gap-2.5 h-full">
               <div className="flex items-center justify-between border-b border-border pb-2 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <FileText className="w-3.5 h-3.5 text-primary" />
@@ -364,8 +366,8 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                 </Button>
               </div>
 
-              {/* Scrollable Description Text */}
-              <div className="bg-muted/30 rounded-xl p-3 border border-border flex-1 overflow-y-auto min-h-0">
+              {/* Description Text */}
+              <div className="bg-muted/30 rounded-xl p-3 border border-border flex-1">
                 <p className="font-sans text-xs sm:text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap selection:bg-primary/20">
                   {result.description}
                 </p>
@@ -373,7 +375,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
             </div>
 
             {/* Tags Card */}
-            <div className="bento-card p-4 flex flex-col gap-2.5 min-h-0 h-full">
+            <div className="bento-card p-4 flex flex-col gap-2.5 h-full">
               <div className="flex items-center justify-between border-b border-border pb-2 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Hash className="w-3.5 h-3.5 text-primary" />
@@ -402,8 +404,8 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                 </Button>
               </div>
 
-              {/* Scrollable Tag Chips Cloud */}
-              <div className="bg-muted/30 rounded-xl p-3 border border-border flex-1 overflow-y-auto min-h-0 flex flex-wrap gap-1.5 content-start">
+              {/* Tag Chips Cloud */}
+              <div className="bg-muted/30 rounded-xl p-3 border border-border flex-1 flex flex-wrap gap-1.5 content-start">
                 {result.tags.map((tag, idx) => (
                   <span
                     key={idx}
