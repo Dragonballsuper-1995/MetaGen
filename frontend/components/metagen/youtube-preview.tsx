@@ -331,7 +331,6 @@ export function YoutubePreview({
                 </div>
               </div>
             </div>
-          </div>
 
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {/* MOBILE YOUTUBE APP FEED SECTION                                    */}
