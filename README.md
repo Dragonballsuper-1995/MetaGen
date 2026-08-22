@@ -39,6 +39,7 @@ MetaGen eliminates the friction of video publishing. By providing a video script
 - **Single Active Title Carousel:** Switch smoothly between *Curiosity & High CTR*, *Search & SEO Dominant*, and *Direct Action & Tutorial* angles with character count and optimal CTR length scoring.
 - **Interactive SEO Diagnostics Scorecard:** Displays a prominent overall score (`99.2% SEO SCORE`) that reveals a breakdown (*Title Hook, Description Depth, Tag Relevance, Keyword Density, Readability*) on hover.
 - **Authentic YouTube Live Simulator:** Dedicated tab previewing how your video will look on **Desktop Search Grids** and **Mobile App Feeds** with 16:9 4K thumbnails, timestamps, and channel badges.
+- **Live Telemetry Ribbon:** Real-time marquee footer tracking Groq LPU inference latency, generation speed (tokens/sec), and precise Time-to-First-Token (TTFT) metrics.
 - **Real-Time Token Streaming:** Live terminal stream preview in the loading matrix using Server-Sent Events (SSE) with early keyword extraction.
 - **Neural Cache Session History:** Persists past generations locally with one-click restore and copy.
 
