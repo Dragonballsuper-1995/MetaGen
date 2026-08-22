@@ -181,6 +181,12 @@ class SeoBreakdown(BaseModel):
     readability: float = Field(..., ge=0, le=100)
 
 
+class TelemetryData(BaseModel):
+    latency_s: float | None = None
+    ttft_s: float | None = None
+    tokens_per_second: float | None = None
+
+
 class MetadataResult(BaseModel):
     title: str = Field(..., min_length=40, max_length=60)
     description: str = Field(..., min_length=800, max_length=1300)
@@ -188,6 +194,7 @@ class MetadataResult(BaseModel):
     seo_score: float | None = Field(default=None, ge=0, le=100)
     seo_breakdown: SeoBreakdown | None = None
     model: str | None = Field(default=None, description="Active AI model used for generation")
+    telemetry: TelemetryData | None = None
 
     @field_validator("tags")
     @classmethod
