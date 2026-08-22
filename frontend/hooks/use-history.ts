@@ -41,6 +41,7 @@ export function useHistory() {
       model: result.model,
       script,
       time: new Date().toISOString(),
+      latency: result.telemetry?.latency_s,
     }
 
     setHistory((prev) => [newItem, ...prev].slice(0, 50)) // Keep last 50
