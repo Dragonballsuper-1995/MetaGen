@@ -62,7 +62,7 @@ export function YoutubePreview({
         </div>
 
         {/* View Mode Toggle Switcher */}
-        <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border text-xs">
+        <div className="hidden md:flex items-center bg-muted/60 p-1 rounded-xl border border-border text-xs">
           <button
             onClick={() => setViewMode("dual")}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
@@ -116,13 +116,14 @@ export function YoutubePreview({
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {/* DESKTOP YOUTUBE GRID SECTION                                      */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {(viewMode === "dual" || viewMode === "desktop") && (
-            <div
-              className={`${
-                viewMode === "dual" ? "lg:col-span-8" : "w-full"
-              } flex flex-col gap-3 rounded-2xl bg-[#0F0F0F] text-[#F1F1F1] border border-zinc-800 p-3.5 sm:p-4 shadow-xl`}
-            >
-              {/* Desktop Header Simulation */}
+          <div
+            className={`
+              ${viewMode === "mobile" ? "hidden" : "hidden md:flex"}
+              ${viewMode === "dual" ? "lg:col-span-8" : "w-full"}
+              flex-col gap-3 rounded-2xl bg-[#0F0F0F] text-[#F1F1F1] border border-zinc-800 p-3.5 sm:p-4 shadow-xl
+            `}
+          >
+            {/* Desktop Header Simulation */}
               <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 text-xs text-zinc-400">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 text-white font-bold tracking-tighter text-sm">
@@ -330,17 +331,18 @@ export function YoutubePreview({
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* ═══════════════════════════════════════════════════════════════════ */}
           {/* MOBILE YOUTUBE APP FEED SECTION                                    */}
           {/* ═══════════════════════════════════════════════════════════════════ */}
-          {(viewMode === "dual" || viewMode === "mobile") && (
-            <div
-              className={`${
-                viewMode === "dual" ? "lg:col-span-4" : "max-w-sm mx-auto w-full"
-              } flex flex-col rounded-3xl bg-black text-[#F1F1F1] border-4 border-zinc-800 overflow-hidden shadow-2xl`}
-            >
+          <div
+            className={`
+              ${viewMode === "desktop" ? "flex md:hidden" : "flex"}
+              ${viewMode === "dual" ? "lg:col-span-4" : "max-w-sm mx-auto w-full"}
+              flex-col rounded-3xl bg-black text-[#F1F1F1] border-4 border-zinc-800 overflow-hidden shadow-2xl
+            `}
+          >
               {/* Phone Status Bar Simulation */}
               <div className="flex items-center justify-between px-5 pt-2 pb-1 text-[11px] text-zinc-400 font-mono border-b border-zinc-900 bg-black">
                 <span>11:48</span>
@@ -456,7 +458,6 @@ export function YoutubePreview({
                 </div>
               </div>
             </div>
-          )}
         </div>
       </div>
     </div>

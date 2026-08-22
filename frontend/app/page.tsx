@@ -101,7 +101,7 @@ export default function Page() {
       {/* Main Terminal / Studio Stage */}
       <main
         className={`relative z-10 flex-1 w-full px-3 sm:px-6 md:px-8 min-h-0 flex flex-col items-center overflow-y-auto ${
-          appState === "output" ? "justify-start pt-2.5 pb-24" : "justify-center py-4 pb-20"
+          appState === "output" ? "justify-start pt-2.5 pb-32" : "justify-center py-4 pb-20"
         }`}
       >
         <TerminalCore

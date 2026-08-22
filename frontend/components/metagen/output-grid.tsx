@@ -306,29 +306,33 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
             </h2>
 
             {/* Bottom Angle Switcher Pills */}
-            <div className="flex items-center gap-1.5 pt-2 border-t border-border/60 overflow-x-auto hide-scrollbar max-w-[90vw] md:max-w-full">
-              <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-1 whitespace-nowrap flex-shrink-0">
-                Angles:
-              </span>
-              {titleAngles.map((angle, idx) => {
-                const isSelected = selectedAngleIdx === idx
-                const Icon = angle.icon
-                return (
-                  <button
-                    key={angle.id}
-                    onClick={() => setSelectedAngleIdx(idx)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-                      isSelected
-                        ? "bg-primary text-white font-semibold shadow-xs"
-                        : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
-                    }`}
-                  >
-                    <Icon className="w-3 h-3" />
-                    <span>{angle.shortLabel}</span>
-                  </button>
-                )
-              })}
-              <span className="ml-auto text-[11px] font-mono text-muted-foreground whitespace-nowrap flex-shrink-0 pl-2">
+            <div className="flex items-center justify-between pt-2 border-t border-border/60">
+              <div className="flex items-center overflow-hidden w-full">
+                <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-2 whitespace-nowrap flex-shrink-0">
+                  Angles:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar flex-1">
+                  {titleAngles.map((angle, idx) => {
+                    const isSelected = selectedAngleIdx === idx
+                    const Icon = angle.icon
+                    return (
+                      <button
+                        key={angle.id}
+                        onClick={() => setSelectedAngleIdx(idx)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                          isSelected
+                            ? "bg-primary text-white font-semibold shadow-xs"
+                            : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span>{angle.shortLabel}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              <span className="ml-2 text-[11px] font-mono text-muted-foreground whitespace-nowrap flex-shrink-0">
                 {activeTitle.length} chars
               </span>
             </div>
@@ -429,7 +433,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
       {/* ─── TAB 2: YOUTUBE SIMULATOR ─────────────────────────────────────────── */}
       {activeTab === "simulator" && (
         <div className="flex-1 flex flex-col justify-center items-center overflow-y-auto max-h-full py-2">
-          <div className="w-full max-w-3xl">
+          <div className="w-full">
             <YoutubePreview
               title={activeTitle}
               description={result.description}
