@@ -9,6 +9,8 @@ import { TelemetryRibbon } from "@/components/metagen/telemetry-ribbon"
 import { MetadataResult, HistoryItem, ModelChoice } from "@/lib/types"
 import { useHistory } from "@/hooks/use-history"
 import { useStreamGenerate } from "@/hooks/useStreamGenerate"
+import { fetchLiveTelemetry } from "@/lib/diagnostics"
+import { TelemetryData } from "@/lib/types"
 
 export default function Page() {
   const [selectedModel, setSelectedModel] = useState<ModelChoice>("auto")
@@ -16,10 +18,23 @@ export default function Page() {
   const [result, setResult] = useState<MetadataResult | undefined>()
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [currentScript, setCurrentScript] = useState("")
+  const [globalTelemetry, setGlobalTelemetry] = useState<TelemetryData | undefined>()
 
   const { history, addToHistory, clearHistory } = useHistory()
   const stream = useStreamGenerate()
   const processedResultRef = useRef<MetadataResult | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    fetchLiveTelemetry().then((data) => {
+      if (mounted && data) {
+        setGlobalTelemetry(data)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Transition to output once real streaming completes successfully (guarded against re-renders)
   useEffect(() => {
@@ -112,7 +127,7 @@ export default function Page() {
         tokenCount={tokenCount}
         byteCount={byteCount}
         seoScore={result?.seo_score ?? 97}
-        telemetry={result?.telemetry}
+        telemetry={result?.telemetry || globalTelemetry}
       />
 
       {/* History Drawer */}
