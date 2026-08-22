@@ -41,7 +41,7 @@ export function HistorySidebar({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 380, damping: 35 }}
-            className="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] z-50 p-4 pl-0 flex flex-col"
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] z-50 p-4 sm:p-6 flex flex-col"
           >
             <div className="studio-card w-full h-full flex flex-col bg-surface shadow-2xl overflow-hidden rounded-2xl">
               {/* Header */}

@@ -3614,6 +3614,16 @@ def generate_youtube_metadata_stream(
                     )
                     contract_elapsed = perf_counter() - contract_start
                     strategy_elapsed = perf_counter() - strategy_start
+
+                    total_time = perf_counter() - request_start
+                    tps = round(token_chunks / total_time, 1) if total_time > 0 else 0
+
+                    finalized["telemetry"] = {
+                        "latency_s": round(total_time, 2),
+                        "ttft_s": round(first_token_s, 2) if first_token_s else None,
+                        "tokens_per_second": tps
+                    }
+
                     _record_stream_diagnostic(
                         ok=True,
                         stage="completed",

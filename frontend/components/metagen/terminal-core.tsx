@@ -148,11 +148,11 @@ export function TerminalCore({
           <div className="flex flex-col items-center gap-2">
             {/* Model Selector Pill */}
             {onModelChange && (
-              <div className="inline-flex items-center p-1 bg-surface border border-border rounded-full shadow-sm">
+              <div className="inline-flex items-center p-1 bg-surface border border-border rounded-full shadow-sm overflow-x-auto max-w-[90vw] md:max-w-full hide-scrollbar">
                 <button
                   type="button"
                   onClick={() => onModelChange("auto")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     selectedModel === "auto"
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -165,7 +165,7 @@ export function TerminalCore({
                 <button
                   type="button"
                   onClick={() => onModelChange("groq")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     selectedModel === "groq"
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -178,7 +178,7 @@ export function TerminalCore({
                 <button
                   type="button"
                   onClick={() => onModelChange("groq-20b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     selectedModel === "groq-20b"
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -191,7 +191,7 @@ export function TerminalCore({
                 <button
                   type="button"
                   onClick={() => onModelChange("mistral")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     selectedModel === "mistral"
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"

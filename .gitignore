@@ -59,8 +59,13 @@ frontend/public/placeholder-user.jpg
 frontend/public/placeholder.jpg
 frontend/public/placeholder.svg
 screenshots/
+screenshots_s24_ultra/
 
 1.html
 2.html
 best.html
 good.html
+Screenshot*.png
+frontend/annotate.py
+frontend/annotate_v2.py
+frontend/take-screenshots.mjs

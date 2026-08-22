@@ -85,10 +85,8 @@ export default function Page() {
 
       {/* Main Terminal / Studio Stage */}
       <main
-        className={`relative z-10 flex-1 w-full px-3 sm:px-6 md:px-8 min-h-0 ${
-          appState === "output"
-            ? "flex flex-col justify-start items-center overflow-hidden pt-2.5 pb-12"
-            : "flex flex-col justify-center items-center overflow-y-auto py-4 pb-14"
+        className={`relative z-10 flex-1 w-full px-3 sm:px-6 md:px-8 min-h-0 flex flex-col items-center overflow-y-auto ${
+          appState === "output" ? "justify-start pt-2.5 pb-24" : "justify-center py-4 pb-20"
         }`}
       >
         <TerminalCore
@@ -114,6 +112,7 @@ export default function Page() {
         tokenCount={tokenCount}
         byteCount={byteCount}
         seoScore={result?.seo_score ?? 97}
+        telemetry={result?.telemetry}
       />
 
       {/* History Drawer */}

@@ -22,6 +22,12 @@ export interface SeoBreakdown {
   readability: number;
 }
 
+export interface TelemetryData {
+  latency_s?: number;
+  ttft_s?: number;
+  tokens_per_second?: number;
+}
+
 export interface MetadataResult {
   title: string;
   description: string;
@@ -29,6 +35,7 @@ export interface MetadataResult {
   seo_score?: number;
   seo_breakdown?: SeoBreakdown;
   model?: string;
+  telemetry?: TelemetryData;
 }
 
 export interface HistoryItem {
