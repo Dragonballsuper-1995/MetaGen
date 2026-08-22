@@ -105,12 +105,12 @@ export function YoutubePreview({
       </div>
 
       {/* ─── SIMULATOR CONTENT STAGE ──────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+      <div className="flex-1 min-h-0 flex flex-col pr-1">
         <div
-          className={`grid gap-5 ${
+          className={`grid gap-5 flex-1 min-h-0 ${
             viewMode === "dual"
               ? "grid-cols-1 lg:grid-cols-12 items-stretch"
-              : "grid-cols-1 max-w-5xl mx-auto"
+              : "grid-cols-1 max-w-5xl mx-auto overflow-y-auto"
           }`}
         >
           {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -120,7 +120,7 @@ export function YoutubePreview({
             className={`
               ${viewMode === "mobile" ? "hidden" : "hidden md:flex"}
               ${viewMode === "dual" ? "lg:col-span-8" : "w-full"}
-              flex-col gap-3 rounded-2xl bg-[#0F0F0F] text-[#F1F1F1] border border-zinc-800 p-3.5 sm:p-4 shadow-xl
+              flex-col gap-3 rounded-2xl bg-[#0F0F0F] text-[#F1F1F1] border border-zinc-800 p-3.5 sm:p-4 shadow-xl min-h-0
             `}
           >
             {/* Desktop Header Simulation */}
@@ -169,7 +169,7 @@ export function YoutubePreview({
 
               {/* Desktop Multi-Card Video Feed Grid */}
               <div
-                className={`grid gap-4 mt-1 ${
+                className={`grid gap-4 mt-1 flex-1 min-h-0 overflow-y-auto hide-scrollbar ${
                   viewMode === "desktop"
                     ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                     : "grid-cols-1 sm:grid-cols-2"
@@ -339,7 +339,7 @@ export function YoutubePreview({
             className={`
               ${viewMode === "desktop" ? "flex md:hidden" : "flex"}
               ${viewMode === "dual" ? "lg:col-span-4" : "w-full mx-auto max-w-[340px]"}
-              flex-col rounded-3xl bg-black text-[#F1F1F1] border-[6px] border-zinc-900 overflow-hidden shadow-2xl
+              flex-col rounded-3xl bg-black text-[#F1F1F1] border-[6px] border-zinc-900 overflow-hidden shadow-2xl min-h-0
             `}
           >
               {/* Phone Status Bar Simulation */}
@@ -366,7 +366,7 @@ export function YoutubePreview({
               </div>
 
               {/* Mobile Feed Scroll Area */}
-              <div className="flex-1 flex flex-col gap-4 p-3 hide-scrollbar">
+              <div className="flex-1 flex flex-col gap-4 p-3 overflow-y-auto hide-scrollbar">
                 {/* ── MOBILE VIDEO 1: YOUR GENERATED VIDEO (HIGHLIGHTED) ── */}
                 <div className="flex flex-col gap-2.5 p-2 rounded-2xl bg-zinc-900/90 border-2 border-primary shadow-lg shadow-primary/10">
                   {/* Thumbnail */}

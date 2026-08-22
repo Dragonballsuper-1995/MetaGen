@@ -98,7 +98,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
   const wordCount = sourceScript.trim() ? sourceScript.split(/\s+/).filter(Boolean).length : 0
 
   return (
-    <div className="flex flex-col w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none">
+    <div className="flex flex-col w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none h-full min-h-0">
       {/* ─── TOP CONTROL BAR ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 border-b border-border/80 pb-3 flex-shrink-0">
         {/* Left: View Tabs + Source Script Trigger */}
@@ -240,7 +240,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
 
       {/* ─── TAB 1: METADATA STUDIO (SINGLE VIEWPORT) ─────────────────────────── */}
       {activeTab === "studio" && (
-        <div className="flex flex-col flex-1 min-h-0 gap-3.5">
+        <div className="flex flex-col flex-1 min-h-0 gap-3.5 my-auto justify-center overflow-y-auto hide-scrollbar pb-4">
           {/* HERO SINGLE-TITLE CARD WITH ANGLE SWITCHER */}
           <div className="bento-card p-4 sm:p-5 flex flex-col gap-2.5 flex-shrink-0">
             {/* Title Card Header */}
@@ -435,7 +435,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
 
       {/* ─── TAB 2: YOUTUBE SIMULATOR ─────────────────────────────────────────── */}
       {activeTab === "simulator" && (
-        <div className="flex-1 flex flex-col items-center py-2 min-h-0">
+        <div className="flex-1 flex flex-col items-center py-2 h-full min-h-0">
           <div className="w-full h-full min-h-0">
             <YoutubePreview
               title={activeTitle}

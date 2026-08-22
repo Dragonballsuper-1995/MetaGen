@@ -140,7 +140,7 @@ export function TerminalCore({
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center flex-1 min-h-[calc(100dvh-9rem)] py-2">
+    <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center flex-1 h-full min-h-0 py-2">
       {/* 1. INPUT STAGE */}
       {appState === "input" && (
         <div className="w-full max-w-4xl flex flex-col items-center text-center gap-4 sm:gap-6 my-auto">
@@ -347,10 +347,8 @@ export function TerminalCore({
 
       {/* 3. STUDIO RESULTS STAGE */}
       {appState === "output" && result && (
-        <div className="w-full flex-1 min-h-full flex flex-col">
-          <div className="flex-1" />
+        <div className="w-full flex-1 h-full min-h-0 flex flex-col justify-center">
           <OutputGrid result={result} sourceScript={script} onReset={onReset} />
-          <div className="flex-1" />
         </div>
       )}
     </div>
