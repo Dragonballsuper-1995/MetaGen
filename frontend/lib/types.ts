@@ -2,7 +2,20 @@
 // API schemas (mirrors FastAPI Pydantic models in main.py)
 // ---------------------------------------------------------------------------
 
-export type ModelChoice = "auto" | "groq" | "groq-20b" | "mistral";
+export type ModelChoice =
+  | "auto"
+  | "phi-4-mini"
+  | "qwen-2.5-7b"
+  | "llama-3.1-8b"
+  | "mistral"
+  | "mistral-7b"
+  | "gemini"
+  | "groq"
+  | "groq-120b"
+  | "groq-20b"
+  | "opencode-zen"
+  | "openrouter"
+  | string;
 
 export interface VideoRequest {
   text: string;
@@ -22,12 +35,6 @@ export interface SeoBreakdown {
   readability: number;
 }
 
-export interface TelemetryData {
-  latency_s?: number;
-  ttft_s?: number;
-  tokens_per_second?: number;
-}
-
 export interface MetadataResult {
   title: string;
   description: string;
@@ -35,7 +42,6 @@ export interface MetadataResult {
   seo_score?: number;
   seo_breakdown?: SeoBreakdown;
   model?: string;
-  telemetry?: TelemetryData;
 }
 
 export interface HistoryItem {

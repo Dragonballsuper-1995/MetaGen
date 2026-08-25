@@ -112,7 +112,6 @@ export default function Page() {
         tokenCount={tokenCount}
         byteCount={byteCount}
         seoScore={result?.seo_score ?? 97}
-        telemetry={result?.telemetry}
       />
 
       {/* History Drawer */}

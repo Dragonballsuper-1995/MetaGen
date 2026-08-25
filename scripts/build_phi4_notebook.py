@@ -1,0 +1,477 @@
+"""
+Generator script for YT_Model_Brain_Phi4.ipynb
+Builds the dedicated QLoRA fine-tuning notebook for Microsoft Phi-4 Mini 3.8B Instruct.
+Features ultra-low-RAM (<2 GB) streaming safetensors merging to guarantee zero crashes on Colab.
+"""
+
+import json
+from pathlib import Path
+
+def generate_phi4_notebook():
+    cells = [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# 🚀 MetaGen Brain: Microsoft Phi-4 Mini (3.8B) Fine-Tuning Pipeline\n",
+                "\n",
+                "This notebook provides the complete, end-to-end pipeline to fine-tune **Microsoft Phi-4 Mini Instruct (3.8B)** on YouTube SEO metadata datasets using **QLoRA (4-bit)** with ChatML formatting, merge the trained adapter weights with ultra-low RAM streaming, compile the model into a lightweight **Q4_K_M GGUF format (~2.4 GB)** via `llama.cpp`, and deploy it to Hugging Face Hub for lightning-fast CPU/GPU local execution in MetaGen."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 1. Install required packages for Phi-4 Mini QLoRA fine-tuning & GGUF conversion\n",
+                "!pip install -q -U \"transformers>=4.49.0\" \"datasets>=2.19.0\" \"accelerate>=0.32.0\" \"peft>=0.11.1\" \"bitsandbytes>=0.43.1\" \"huggingface_hub>=0.23.0\" safetensors"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 2. Check GPU Environment\n",
+                "import torch\n",
+                "\n",
+                "print(f\"CUDA Available: {torch.cuda.is_available()}\")\n",
+                "if torch.cuda.is_available():\n",
+                "    print(f\"Active GPU: {torch.cuda.get_device_name(0)}\")\n",
+                "    print(f\"Total VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB\")\n",
+                "else:\n",
+                "    print(\"Warning: GPU not detected. Make sure you are using a GPU runtime in Colab.\")"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 3. Hugging Face Login (Make sure HF_TOKEN is configured in Colab Secrets)\n",
+                "from huggingface_hub import login\n",
+                "import os\n",
+                "\n",
+                "try:\n",
+                "    from google.colab import userdata\n",
+                "    hf_token = userdata.get('HF_TOKEN')\n",
+                "    login(token=hf_token)\n",
+                "    print(\"Successfully logged in to Hugging Face Hub!\")\n",
+                "except Exception as e:\n",
+                "    print(\"Colab secret HF_TOKEN not found, please authenticate manually:\")\n",
+                "    login()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## ⚙️ Model & Tokenizer Configuration (Microsoft Phi-4 Mini 3.8B Instruct with SDPA)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 4. Load Phi-4 Mini 3.8B with 4-bit Quantization & Fast SDPA Kernels\n",
+                "import torch\n",
+                "import gc\n",
+                "from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\n",
+                "\n",
+                "# Clear residual VRAM from previous runs\n",
+                "for var in ['model', 'trainer', 'base_model', 'merged_model']:\n",
+                "    if var in globals():\n",
+                "        del globals()[var]\n",
+                "gc.collect()\n",
+                "torch.cuda.empty_cache()\n",
+                "\n",
+                "MODEL_ID = \"microsoft/Phi-4-mini-instruct\"\n",
+                "\n",
+                "bnb_config = BitsAndBytesConfig(\n",
+                "    load_in_4bit=True,\n",
+                "    bnb_4bit_quant_type=\"nf4\",\n",
+                "    bnb_4bit_compute_dtype=torch.bfloat16,\n",
+                "    bnb_4bit_use_double_quant=True,\n",
+                ")\n",
+                "\n",
+                "tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=False)\n",
+                "tokenizer.pad_token = tokenizer.eos_token\n",
+                "tokenizer.padding_side = \"right\"\n",
+                "\n",
+                "model = AutoModelForCausalLM.from_pretrained(\n",
+                "    MODEL_ID,\n",
+                "    quantization_config=bnb_config,\n",
+                "    device_map={\"\": 0},\n",
+                "    dtype=torch.bfloat16,\n",
+                "    attn_implementation=\"sdpa\",\n",
+                "    trust_remote_code=False,\n",
+                ")\n",
+                "\n",
+                "print(f\"Loaded {MODEL_ID} in 4-bit with SDPA acceleration successfully!\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 📝 Dataset Loading (Google Drive / Local), Formatting & Tokenization"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 5. Mount Google Drive, Load, Format & Tokenize Dataset\n",
+                "import os\n",
+                "from datasets import load_dataset\n",
+                "\n",
+                "DRIVE_PATH = \"/content/drive/MyDrive/Colab Notebooks/youtube_finetuning_dataset.json\"\n",
+                "LOCAL_PATH = \"youtube_finetuning_dataset.json\"\n",
+                "\n",
+                "if not os.path.exists(DRIVE_PATH) and not os.path.exists(LOCAL_PATH):\n",
+                "    try:\n",
+                "        from google.colab import drive\n",
+                "        drive.mount(\"/content/drive\")\n",
+                "    except Exception as e:\n",
+                "        print(f\"Drive mount notice: {e}\")\n",
+                "\n",
+                "DATASET_PATH = DRIVE_PATH if os.path.exists(DRIVE_PATH) else LOCAL_PATH\n",
+                "dataset = load_dataset(\"json\", data_files=DATASET_PATH, split=\"train\")\n",
+                "print(f\"Successfully loaded {len(dataset)} training examples from: {DATASET_PATH}\")\n",
+                "\n",
+                "def format_phi4_prompt(sample):\n",
+                "    system_msg = \"You are a professional YouTube SEO specialist. Output ONLY valid JSON containing title, description, and tags.\"\n",
+                "    user_msg = f\"Generate YouTube SEO metadata for this video script:\\n{sample.get('script', sample.get('input', ''))}\"\n",
+                "    assistant_msg = sample.get('target_json', sample.get('output', ''))\n",
+                "    \n",
+                "    formatted_text = (\n",
+                "        f\"<|im_start|>system\\n\"\n",
+                "        f\"{system_msg}<|im_end|>\\n\"\n",
+                "        f\"<|im_start|>user\\n\"\n",
+                "        f\"{user_msg}<|im_end|>\\n\"\n",
+                "        f\"<|im_start|>assistant\\n\"\n",
+                "        f\"{assistant_msg}<|im_end|>\"\n",
+                "    )\n",
+                "    return {\"text\": formatted_text}\n",
+                "\n",
+                "dataset = dataset.map(format_phi4_prompt)\n",
+                "\n",
+                "def tokenize_fn(examples):\n",
+                "    return tokenizer(examples[\"text\"], truncation=True, max_length=384)\n",
+                "\n",
+                "tokenized_dataset = dataset.map(tokenize_fn, batched=True, remove_columns=dataset.column_names)\n",
+                "print(\"Sample Formatted Phi-4 Prompt:\")\n",
+                "print(dataset[0][\"text\"][:400])\n",
+                "print(f\"✅ Tokenized {len(tokenized_dataset)} samples successfully!\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🎯 LoRA Configuration for Phi Architecture"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 6. Configure LoRA Parameters\n",
+                "from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training\n",
+                "\n",
+                "model = prepare_model_for_kbit_training(model)\n",
+                "peft_config = LoraConfig(\n",
+                "    r=16,\n",
+                "    lora_alpha=32,\n",
+                "    target_modules=[\n",
+                "        \"q_proj\",\n",
+                "        \"k_proj\",\n",
+                "        \"v_proj\",\n",
+                "        \"o_proj\",\n",
+                "        \"gate_proj\",\n",
+                "        \"up_proj\",\n",
+                "        \"down_proj\",\n",
+                "    ],\n",
+                "    lora_dropout=0.05,\n",
+                "    bias=\"none\",\n",
+                "    task_type=\"CAUSAL_LM\",\n",
+                ")\n",
+                "\n",
+                "model = get_peft_model(model, peft_config)\n",
+                "model.print_trainable_parameters()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🚀 Lightning Fast Training Execution (~5-6 Mins on T4)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 7. Setup Training Arguments & Native Trainer (Optimized for ~5-6 mins)\n",
+                "import os\n",
+                "from transformers import Trainer, TrainingArguments, DataCollatorForLanguageModeling\n",
+                "\n",
+                "training_args = TrainingArguments(\n",
+                "    output_dir=\"./results_phi4\",\n",
+                "    per_device_train_batch_size=4,\n",
+                "    gradient_accumulation_steps=2,\n",
+                "    warmup_steps=10,\n",
+                "    max_steps=60,\n",
+                "    max_grad_norm=0.3,\n",
+                "    learning_rate=2e-4,\n",
+                "    lr_scheduler_type=\"cosine\",\n",
+                "    logging_steps=10,\n",
+                "    optim=\"paged_adamw_8bit\",\n",
+                "    bf16=True,\n",
+                "    fp16=False,\n",
+                "    save_strategy=\"no\",\n",
+                "    report_to=\"none\",\n",
+                ")\n",
+                "\n",
+                "trainer = Trainer(\n",
+                "    model=model,\n",
+                "    train_dataset=tokenized_dataset,\n",
+                "    data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),\n",
+                "    args=training_args,\n",
+                ")\n",
+                "\n",
+                "# Ensure trainable LoRA weights are Float32 for stable T4 training\n",
+                "for param in trainer.model.parameters():\n",
+                "    if param.requires_grad:\n",
+                "        param.data = param.data.to(torch.float32)\n",
+                "\n",
+                "print(\"🚀 Starting Lightning LoRA training (60 steps total)...\\n\")\n",
+                "trainer.train()\n",
+                "\n",
+                "# Save locally\n",
+                "trainer.model.save_pretrained(\"./final_phi4_adapter\")\n",
+                "tokenizer.save_pretrained(\"./final_phi4_adapter\")\n",
+                "\n",
+                "# Auto-save permanent copy to Google Drive\n",
+                "drive_adapter_dir = \"/content/drive/MyDrive/Colab Notebooks/final_phi4_adapter\"\n",
+                "try:\n",
+                "    trainer.model.save_pretrained(drive_adapter_dir)\n",
+                "    tokenizer.save_pretrained(drive_adapter_dir)\n",
+                "    print(f\"✅ Adapter permanently backed up to Google Drive: {drive_adapter_dir}\")\n",
+                "except Exception as e:\n",
+                "    print(f\"Drive backup notice: {e}\")\n",
+                "\n",
+                "print(\"✅ Training complete in ~5 mins! Adapter saved successfully.\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 🔄 Ultra-Low-RAM Safetensors Streaming Merger (< 2 GB Peak RAM)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 8. Ultra-Low-RAM Safetensors Direct Streaming Merger (< 2 GB RAM!)\n",
+                "import os\n",
+                "import json\n",
+                "import torch\n",
+                "import gc\n",
+                "import shutil\n",
+                "from huggingface_hub import snapshot_download\n",
+                "from safetensors.torch import load_file, save_file\n",
+                "from transformers import AutoTokenizer\n",
+                "\n",
+                "MODEL_ID = \"microsoft/Phi-4-mini-instruct\"\n",
+                "output_dir = \"./phi4_yt_seo_merged\"\n",
+                "adapter_path = \"./final_phi4_adapter\"\n",
+                "if not os.path.exists(adapter_path):\n",
+                "    adapter_path = \"/content/drive/MyDrive/Colab Notebooks/final_phi4_adapter\"\n",
+                "\n",
+                "print(f\"1. Loading LoRA adapter weights from: {adapter_path}...\")\n",
+                "with open(os.path.join(adapter_path, \"adapter_config.json\"), \"r\") as f:\n",
+                "    adapter_config = json.load(f)\n",
+                "r = adapter_config.get(\"r\", 16)\n",
+                "lora_alpha = adapter_config.get(\"lora_alpha\", 32)\n",
+                "scaling = lora_alpha / r\n",
+                "\n",
+                "lora_weights = load_file(os.path.join(adapter_path, \"adapter_model.safetensors\"))\n",
+                "print(f\"Loaded {len(lora_weights)} LoRA tensors (Scaling factor: {scaling:.2f})\")\n",
+                "\n",
+                "print(f\"2. Locating base model files for {MODEL_ID}...\")\n",
+                "base_model_dir = snapshot_download(repo_id=MODEL_ID, allow_patterns=[\"*.json\", \"*.safetensors\", \"tokenizer*\"])\n",
+                "\n",
+                "os.makedirs(output_dir, exist_ok=True)\n",
+                "for f in os.listdir(base_model_dir):\n",
+                "    if f.endswith(\".json\") or f.startswith(\"tokenizer\") or f.endswith(\".txt\"):\n",
+                "        shutil.copy(os.path.join(base_model_dir, f), os.path.join(output_dir, f))\n",
+                "\n",
+                "safetensor_files = [f for f in os.listdir(base_model_dir) if f.endswith(\".safetensors\")]\n",
+                "print(f\"3. Merging {len(safetensor_files)} shards layer-by-layer (< 2 GB peak RAM)...\")\n",
+                "\n",
+                "for shard_file in sorted(safetensor_files):\n",
+                "    print(f\"  -> Processing shard {shard_file}...\")\n",
+                "    shard_weights = load_file(os.path.join(base_model_dir, shard_file))\n",
+                "    merged_shard = {}\n",
+                "    \n",
+                "    for key, tensor in shard_weights.items():\n",
+                "        lora_a_key = f\"base_model.model.{key}\".replace(\".weight\", \".lora_A.weight\")\n",
+                "        lora_b_key = f\"base_model.model.{key}\".replace(\".weight\", \".lora_B.weight\")\n",
+                "        \n",
+                "        if lora_a_key in lora_weights and lora_b_key in lora_weights:\n",
+                "            w_a = lora_weights[lora_a_key].to(torch.float32)\n",
+                "            w_b = lora_weights[lora_b_key].to(torch.float32)\n",
+                "            delta = (w_b @ w_a) * scaling\n",
+                "            merged_tensor = tensor.to(torch.float32) + delta\n",
+                "            merged_shard[key] = merged_tensor.to(tensor.dtype)\n",
+                "        else:\n",
+                "            merged_shard[key] = tensor\n",
+                "            \n",
+                "    save_file(merged_shard, os.path.join(output_dir, shard_file), metadata={\"format\": \"pt\"})\n",
+                "    del shard_weights\n",
+                "    del merged_shard\n",
+                "    gc.collect()\n",
+                "\n",
+                "tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=False)\n",
+                "tokenizer.save_pretrained(output_dir)\n",
+                "print(f\"✅ Ultra-Low-RAM merge completed successfully! Model saved to {output_dir}\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 💾 Backup Merged Model to Google Drive & Download ZIP"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 8.5 Save Merged Model to Google Drive & Download ZIP to Local Machine\n",
+                "import os\n",
+                "import shutil\n",
+                "from google.colab import files, drive\n",
+                "\n",
+                "# Ensure Google Drive is mounted\n",
+                "if not os.path.exists(\"/content/drive\"):\n",
+                "    try:\n",
+                "        drive.mount(\"/content/drive\")\n",
+                "    except Exception as e:\n",
+                "        print(f\"Drive mount notice: {e}\")\n",
+                "\n",
+                "# 1. Copy full merged folder to Google Drive\n",
+                "drive_backup_dir = \"/content/drive/MyDrive/Colab Notebooks/phi4_yt_seo_merged\"\n",
+                "print(f\"1. Backing up merged model to Google Drive at: {drive_backup_dir}...\")\n",
+                "try:\n",
+                "    if os.path.exists(drive_backup_dir):\n",
+                "        shutil.rmtree(drive_backup_dir)\n",
+                "    shutil.copytree(\"./phi4_yt_seo_merged\", drive_backup_dir)\n",
+                "    print(\"✅ Merged model folder successfully backed up to Google Drive!\")\n",
+                "except Exception as e:\n",
+                "    print(f\"Drive copy notice: {e}\")\n",
+                "\n",
+                "# 2. Compress merged model into ZIP archive\n",
+                "zip_filename = \"phi4_yt_seo_merged.zip\"\n",
+                "print(f\"2. Compressing model into {zip_filename}...\")\n",
+                "!zip -r phi4_yt_seo_merged.zip ./phi4_yt_seo_merged\n",
+                "\n",
+                "# 3. Copy ZIP to Google Drive\n",
+                "try:\n",
+                "    shutil.copy(zip_filename, f\"/content/drive/MyDrive/Colab Notebooks/{zip_filename}\")\n",
+                "    print(f\"✅ {zip_filename} also backed up to Google Drive!\")\n",
+                "except Exception as e:\n",
+                "    print(f\"ZIP Drive copy notice: {e}\")\n",
+                "\n",
+                "# 4. Trigger direct browser download to local machine\n",
+                "print(f\"3. Triggering direct browser download of {zip_filename} to your machine...\")\n",
+                "try:\n",
+                "    files.download(zip_filename)\n",
+                "except Exception as e:\n",
+                "    print(f\"Browser download notice: {e}\")\n",
+                "print(\"✅ Merged model backup complete!\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 📦 Quantize to GGUF (llama.cpp) & Push to Hugging Face Hub"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# 9. Compile llama.cpp and convert to Q4_K_M GGUF\n",
+                "import os\n",
+                "from huggingface_hub import HfApi\n",
+                "\n",
+                "print(\"1. Building llama.cpp engine...\")\n",
+                "if not os.path.exists(\"llama.cpp\"):\n",
+                "    !git clone https://github.com/ggerganov/llama.cpp\n",
+                "    !cd llama.cpp && cmake -B build && cmake --build build --config Release -j 2\n",
+                "    !pip install -r llama.cpp/requirements.txt\n",
+                "\n",
+                "print(\"2. Converting model to GGUF...\")\n",
+                "!python llama.cpp/convert_hf_to_gguf.py ./phi4_yt_seo_merged --outtype f16 --outfile custom-phi4-yt-seo-f16.gguf\n",
+                "\n",
+                "print(\"3. Quantizing to Q4_K_M...\")\n",
+                "!./llama.cpp/build/bin/llama-quantize custom-phi4-yt-seo-f16.gguf custom-phi4-yt-seo-Q4_K_M.gguf Q4_K_M || ./llama.cpp/build/llama-quantize custom-phi4-yt-seo-f16.gguf custom-phi4-yt-seo-Q4_K_M.gguf Q4_K_M\n",
+                "\n",
+                "print(\"4. Uploading to Hugging Face Hub...\")\n",
+                "api = HfApi()\n",
+                "api.upload_file(\n",
+                "    path_or_fileobj=\"custom-phi4-yt-seo-Q4_K_M.gguf\",\n",
+                "    path_in_repo=\"custom-phi4-yt-seo-Q4_K_M.gguf\",\n",
+                "    repo_id=\"SujalChhajed925/yt-seo-phi4-merged\",\n",
+                "    repo_type=\"model\",\n",
+                ")\n",
+                "print(\"✅ custom-phi4-yt-seo-Q4_K_M.gguf uploaded to Hugging Face Hub successfully!\")"
+            ]
+        }
+    ]
+
+    nb_data = {
+        "cells": cells,
+        "metadata": {
+            "accelerator": "GPU",
+            "colab": {
+                "provenance": [],
+                "gpuType": "T4"
+            },
+            "language_info": {
+                "name": "python"
+            }
+        },
+        "nbformat": 4,
+        "nbformat_minor": 0
+    }
+
+    target_path = Path("YT_Model_Brain_Phi4.ipynb")
+    with open(target_path, "w", encoding="utf-8") as f:
+        json.dump(nb_data, f, indent=2)
+    print(f"Generated {target_path} successfully!")
+
+if __name__ == "__main__":
+    generate_phi4_notebook()

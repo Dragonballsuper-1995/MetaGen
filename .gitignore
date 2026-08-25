@@ -1,71 +1,75 @@
-# Node modules
+# Node & Frontend dependencies / build output
 node_modules/
 frontend/node_modules/
 .npm/
-
-# Next.js build output
+.next/
 frontend/.next/
 frontend/out/
-.next/
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo
 
-# Python & Environment
+# Python & Virtual Environments
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-.env
-.env.*
-!.env.example
 .venv/
 venv/
 env/
+ENV/
 .pytest_cache/
 *.pytest_cache/
 .coverage
 htmlcov/
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
 
-# Massive Model Files & HF Cache
-backend/model/
-*.gguf
-.cache/
-hf-cli/
-
-# IDEs and OS files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-app.log
-backend/app.log
+# Environment variables & Secrets
+.env
+.env.*
+!.env.example
 backend/.env
 frontend/.env.local
 frontend/.env.production
+frontend/.env.*.local
 
-# Ignored tracking and scratch files
-CONTEXT.md
-DEPLOYMENT_PROGRESS.md
-models.md
-frontend/CONVERSATION.md
-frontend/GEMINI.md
-frontend/lh_report.json
-frontend/lh_report_final.json
-frontend/public/placeholder-logo.png
-frontend/public/placeholder-logo.svg
-frontend/public/placeholder-user.jpg
-frontend/public/placeholder.jpg
-frontend/public/placeholder.svg
+# Massive Model Files & Hugging Face Cache
+backend/model/
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+.cache/
+hf-cli/
+*.incomplete
+*.lock
+
+# IDEs & System Files
+.vscode/
+.idea/
+.claude/
+.system_generated/
+.DS_Store
+Thumbs.db
+
+# Logs & Temporary Files
+*.log
+app.log
+app copy.log
+backend/app.log
+*.tmp
+*.temp
+
+# Local scratch / test media artifacts
 screenshots/
 screenshots_s24_ultra/
-
+Screenshot*.png
+frontend/lh_report.json
+frontend/lh_report_final.json
 1.html
 2.html
 best.html
 good.html
-Screenshot*.png
-frontend/annotate.py
-frontend/annotate_v2.py
-frontend/take-screenshots.mjs

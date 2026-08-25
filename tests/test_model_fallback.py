@@ -29,6 +29,12 @@ def test_normalize_model_choice():
     assert _normalize_model_choice("mistral") == "mistral"
     assert _normalize_model_choice("custom") == "mistral"
     assert _normalize_model_choice("local") == "mistral"
+    assert _normalize_model_choice("llama-3.1-8b") == "local-llama3"
+    assert _normalize_model_choice("llama3") == "local-llama3"
+    assert _normalize_model_choice("qwen-2.5-7b") == "local-qwen"
+    assert _normalize_model_choice("qwen-2.5") == "local-qwen"
+    assert _normalize_model_choice("phi-4-mini") == "local-phi4"
+    assert _normalize_model_choice("phi4") == "local-phi4"
 
 
 def test_human_model_name():
@@ -36,6 +42,9 @@ def test_human_model_name():
     assert _human_model_name("openai/gpt-oss-20b") == "OpenAI GPT-OSS 20B (Groq)"
     assert _human_model_name("qwen/qwen3.6-27b") == "Qwen 3.6 27B (Groq)"
     assert _human_model_name("mistral") == "Mistral 7B (Custom HF)"
+    assert _human_model_name("local-llama3") == "Llama 3.1 8B (Custom HF)"
+    assert _human_model_name("local-qwen") == "Qwen 2.5 7B (Custom HF)"
+    assert _human_model_name("local-phi4") == "Phi-4 Mini 3.8B (Custom HF)"
 
 
 def test_groq_candidate_models_auto():

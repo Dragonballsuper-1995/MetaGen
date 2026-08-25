@@ -2,14 +2,25 @@ import os
 import subprocess
 import sys
 import threading
-from download_model import download
+from download_model import download, MODEL_CATALOG
 
 
 def _background_download():
-    try:
-        download()
-    except Exception as e:
-        print(f"[Warning] Background GGUF model download encountered error: {e}")
+    preload_var = os.environ.get("PRELOAD_MODELS", "mistral-7b,phi-4-mini")
+    model_keys = [k.strip() for k in preload_var.split(",") if k.strip()]
+    for key in model_keys:
+        if key == "all":
+            for k in MODEL_CATALOG:
+                try:
+                    download(k)
+                except Exception as e:
+                    print(f"[Warning] Background download for {k} failed: {e}")
+            break
+        elif key in MODEL_CATALOG:
+            try:
+                download(key)
+            except Exception as e:
+                print(f"[Warning] Background download for {key} failed: {e}")
 
 
 if __name__ == "__main__":
