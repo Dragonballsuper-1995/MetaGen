@@ -98,7 +98,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
   const wordCount = sourceScript.trim() ? sourceScript.split(/\s+/).filter(Boolean).length : 0
 
   return (
-    <div className="flex flex-col w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none">
+    <div className="flex flex-col w-full max-w-6xl mx-auto gap-3.5 animate-in fade-in duration-200 select-none h-full min-h-0">
       {/* ─── TOP CONTROL BAR ─────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 border-b border-border/80 pb-3 flex-shrink-0">
         {/* Left: View Tabs + Source Script Trigger */}
@@ -240,9 +240,11 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
 
       {/* ─── TAB 1: METADATA STUDIO (SINGLE VIEWPORT) ─────────────────────────── */}
       {activeTab === "studio" && (
-        <div className="flex flex-col flex-1 min-h-0 gap-3.5">
-          {/* HERO SINGLE-TITLE CARD WITH ANGLE SWITCHER */}
-          <div className="bento-card p-4 sm:p-5 flex flex-col gap-2.5 flex-shrink-0">
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto hide-scrollbar pb-4">
+          <div className="flex-1 min-h-0" />
+          <div className="flex flex-col gap-3.5 flex-shrink-0">
+            {/* HERO SINGLE-TITLE CARD WITH ANGLE SWITCHER */}
+            <div className="bento-card p-4 sm:p-5 flex flex-col gap-2.5">
             {/* Title Card Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border pb-2.5 gap-3">
               <div className="flex items-center gap-2 flex-wrap">
@@ -279,7 +281,12 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                   </button>
                 </div>
 
-                <Button
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className="text-[11px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md border border-border/50">
+                    {activeTitle.length} <span className="opacity-60">chars</span>
+                  </span>
+                  
+                  <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleCopy(activeTitle, "title")}
@@ -297,6 +304,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </div>
 
@@ -306,31 +314,32 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
             </h2>
 
             {/* Bottom Angle Switcher Pills */}
-            <div className="flex items-center gap-1.5 pt-2 border-t border-border/60 overflow-x-auto hide-scrollbar max-w-[90vw] md:max-w-full">
-              <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-1 whitespace-nowrap flex-shrink-0">
-                Angles:
-              </span>
-              {titleAngles.map((angle, idx) => {
-                const isSelected = selectedAngleIdx === idx
-                const Icon = angle.icon
-                return (
-                  <button
-                    key={angle.id}
-                    onClick={() => setSelectedAngleIdx(idx)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-                      isSelected
-                        ? "bg-primary text-white font-semibold shadow-xs"
-                        : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
-                    }`}
-                  >
-                    <Icon className="w-3 h-3" />
-                    <span>{angle.shortLabel}</span>
-                  </button>
-                )
-              })}
-              <span className="ml-auto text-[11px] font-mono text-muted-foreground whitespace-nowrap flex-shrink-0 pl-2">
-                {activeTitle.length} chars
-              </span>
+            <div className="flex items-center justify-between pt-2 border-t border-border/60">
+              <div className="flex items-center overflow-hidden w-full">
+                <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider mr-2 whitespace-nowrap flex-shrink-0">
+                  Angles:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar flex-1">
+                  {titleAngles.map((angle, idx) => {
+                    const isSelected = selectedAngleIdx === idx
+                    const Icon = angle.icon
+                    return (
+                      <button
+                        key={angle.id}
+                        onClick={() => setSelectedAngleIdx(idx)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                          isSelected
+                            ? "bg-primary text-white font-semibold shadow-xs"
+                            : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        <span>{angle.shortLabel}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -422,14 +431,16 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
                 ))}
               </div>
             </div>
+            </div>
           </div>
+          <div className="flex-1 min-h-0" />
         </div>
       )}
 
       {/* ─── TAB 2: YOUTUBE SIMULATOR ─────────────────────────────────────────── */}
       {activeTab === "simulator" && (
-        <div className="flex-1 flex flex-col justify-center items-center overflow-y-auto max-h-full py-2">
-          <div className="w-full max-w-3xl">
+        <div className="flex-1 flex flex-col items-center py-2 h-full min-h-0">
+          <div className="w-full h-full min-h-0">
             <YoutubePreview
               title={activeTitle}
               description={result.description}

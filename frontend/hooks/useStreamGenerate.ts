@@ -217,6 +217,7 @@ export function useStreamGenerate() {
       seo_score: historyItem.seo_score,
       seo_breakdown: historyItem.seo_breakdown,
       model: historyItem.model,
+      telemetry: historyItem.latency ? { latency_s: historyItem.latency } : undefined,
     });
     setError(null);
     setGenerationTime(null);

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ModelChoice } from "@/lib/types"
+import { ModelChoice, TelemetryData } from "@/lib/types"
 
 interface TelemetryRibbonProps {
   selectedModel?: ModelChoice
@@ -9,12 +9,14 @@ interface TelemetryRibbonProps {
   tokenCount?: number
   byteCount?: number
   seoScore?: number
+  telemetry?: TelemetryData
 }
 
 export function TelemetryRibbon({
   selectedModel = "auto",
   status = "idle",
   seoScore = 97,
+  telemetry,
 }: TelemetryRibbonProps) {
   const [timeStr, setTimeStr] = React.useState("")
   const [isWarmHovered, setIsWarmHovered] = React.useState(false)
@@ -63,7 +65,7 @@ export function TelemetryRibbon({
         >
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 text-[11px] font-bold cursor-pointer transition-all">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            <span>MODEL WARM (0.4S)</span>
+            <span>MODEL WARM ({telemetry?.ttft_s ? `${telemetry.ttft_s.toFixed(2)}S` : "---"})</span>
           </div>
 
           {/* Rich Diagnostics Hover Card */}
@@ -75,7 +77,7 @@ export function TelemetryRibbon({
                   <span className="text-xs font-bold text-foreground">Engine Diagnostics</span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-500 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">
-                  Pre-Warmed (0.4s)
+                  Pre-Warmed ({telemetry?.ttft_s ? `${telemetry.ttft_s.toFixed(2)}s` : "---"})
                 </span>
               </div>
 
@@ -86,7 +88,7 @@ export function TelemetryRibbon({
                     Groq LPU — OpenAI GPT-OSS 120B
                   </span>
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    Speed: ~500 T/s • TTFT: ~0.37s • Latency: &lt;1.0s
+                    Speed: {telemetry?.tokens_per_second ? Math.round(telemetry.tokens_per_second) : "---"} T/s • TTFT: {telemetry?.ttft_s ? telemetry.ttft_s.toFixed(2) : "---"}s • Latency: {telemetry?.latency_s ? telemetry.latency_s.toFixed(2) : "---"}s
                   </span>
                 </div>
 
@@ -129,7 +131,9 @@ export function TelemetryRibbon({
 
         <div className="hidden sm:flex items-center gap-1 text-muted-foreground">
           <span>LATENCY:</span>
-          <strong className="text-foreground font-semibold">1.39S</strong>
+          <strong className="text-foreground font-semibold">
+            {telemetry?.latency_s ? `${telemetry.latency_s.toFixed(2)}S` : "---"}
+          </strong>
         </div>
 
         <div className="hidden md:flex items-center gap-1 text-muted-foreground">
