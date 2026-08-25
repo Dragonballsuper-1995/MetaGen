@@ -270,18 +270,91 @@ async def health_check():
 
 @app.get("/health/runtime")
 async def runtime_health_check():
-    groq_key = (
-        (getattr(settings, "groq_api_key", None) or "").strip()
-        or os.environ.get("GROQ_API_KEY", "").strip()
-        or os.environ.get("GROQ_KEY", "").strip()
-    )
+    import os
+    groq_key = bool((getattr(settings, "groq_api_key", None) or "").strip() or os.environ.get("GROQ_API_KEY", "").strip())
+    gemini_key = bool((getattr(settings, "gemini_api_key", None) or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip())
+    opencode_key = bool((getattr(settings, "opencode_zen_api_key", None) or "").strip() or os.environ.get("OPENCODE_ZEN_API_KEY", "").strip())
+    openrouter_key = bool((getattr(settings, "openrouter_api_key", None) or "").strip() or os.environ.get("OPENROUTER_API_KEY", "").strip())
+    
     return {
         "status": "online",
-        "groq_configured": bool(groq_key),
-        "groq_key_preview": f"{groq_key[:8]}...{groq_key[-4:]}" if groq_key else None,
-        "groq_primary_model": settings.groq_model,
-        "groq_fallback_models": settings.groq_fallback_models,
+        "providers": {
+            "groq": {"configured": groq_key, "model": settings.groq_model},
+            "gemini": {"configured": gemini_key, "model": settings.gemini_model},
+            "opencode_zen": {"configured": opencode_key, "model": settings.opencode_zen_model},
+            "openrouter": {"configured": openrouter_key, "model": settings.openrouter_model},
+        },
         "generation_strategy": settings.generation_strategy,
+    }
+
+
+@app.get("/api/models")
+async def get_available_models():
+    """Return all available cloud and local models for client UI selectors."""
+    import os
+    from download_model import get_available_local_models
+
+    groq_key = bool((getattr(settings, "groq_api_key", None) or "").strip() or os.environ.get("GROQ_API_KEY", "").strip())
+    gemini_key = bool((getattr(settings, "gemini_api_key", None) or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip())
+    opencode_key = bool((getattr(settings, "opencode_zen_api_key", None) or "").strip() or os.environ.get("OPENCODE_ZEN_API_KEY", "").strip())
+    openrouter_key = bool((getattr(settings, "openrouter_api_key", None) or "").strip() or os.environ.get("OPENROUTER_API_KEY", "").strip())
+
+    cloud_models = [
+        {
+            "id": "auto",
+            "name": "Auto Cloud Multi-Tier Fallback (Recommended)",
+            "provider": "Cloud Auto",
+            "description": "Fastest available tier: Groq -> Gemini -> OpenCode Zen -> OpenRouter -> Local GGUF",
+            "available": True,
+        },
+        {
+            "id": "gemini",
+            "name": f"Gemini ({settings.gemini_model})",
+            "provider": "Google AI Studio",
+            "description": "High-accuracy YouTube SEO generation with 1M+ token context",
+            "available": gemini_key,
+        },
+        {
+            "id": "opencode-zen",
+            "name": f"OpenCode Zen ({settings.opencode_zen_model})",
+            "provider": "OpenCode Zen",
+            "description": "Free open-source models via OpenCode Zen gateway",
+            "available": opencode_key,
+        },
+        {
+            "id": "openrouter",
+            "name": f"OpenRouter ({settings.openrouter_model})",
+            "provider": "OpenRouter",
+            "description": "Free open-source model routing via OpenRouter",
+            "available": openrouter_key,
+        },
+        {
+            "id": "groq-120b",
+            "name": "OpenAI GPT-OSS 120B",
+            "provider": "Groq LPU",
+            "description": "High-throughput cloud inference at ~500-1000 tok/s",
+            "available": groq_key,
+        },
+        {
+            "id": "groq-20b",
+            "name": "OpenAI GPT-OSS 20B",
+            "provider": "Groq LPU",
+            "description": "Ultra-fast low latency Groq model",
+            "available": groq_key,
+        },
+        {
+            "id": "qwen-27b",
+            "name": "Qwen 3.6 27B",
+            "provider": "Groq LPU",
+            "description": "Alibaba Qwen reasoning model on Groq",
+            "available": groq_key,
+        },
+    ]
+
+    local_models = get_available_local_models()
+    return {
+        "cloud_models": cloud_models,
+        "local_models": local_models,
     }
 
 
@@ -426,11 +499,23 @@ async def get_status(task_id: str):
 @app.post("/api/generate/stream", dependencies=[Depends(verify_api_key)])
 @limiter.limit(settings.rate_limit)
 async def stream_generation(request: Request, req: VideoRequest):
-    from backend.ai_engine import _get_groq_client, _normalize_model_choice
+    from backend.ai_engine import (
+        _get_gemini_client,
+        _get_groq_client,
+        _get_opencode_zen_client,
+        _get_openrouter_client,
+        _normalize_model_choice,
+    )
 
-    # Only block on local CPU GGUF warmup if explicitly requesting Mistral or if Groq is unconfigured
+    # Only block on local CPU GGUF warmup if explicitly requesting a local model or if ALL cloud providers are unconfigured
     normalized = _normalize_model_choice(req.model)
-    if normalized == "mistral" or not _get_groq_client():
+    has_cloud = bool(
+        _get_groq_client()
+        or _get_gemini_client()
+        or _get_opencode_zen_client()
+        or _get_openrouter_client()
+    )
+    if normalized.startswith("local") or normalized == "mistral" or not has_cloud:
         await _ensure_model_warm(app)
 
     async def event_generator():

@@ -29,6 +29,18 @@ try:
 except ImportError:
     Groq = None
 
+try:
+    from google import genai
+    from google.genai import types as genai_types
+except ImportError:
+    genai = None
+    genai_types = None
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
 if TYPE_CHECKING:
     pass
 
@@ -50,6 +62,9 @@ logger = setup_logging("ai_engine")
 # ---------------------------------------------------------------------------
 _llm_instance: Any | None = None
 _groq_client: Any | None = None
+_gemini_client: Any | None = None
+_opencode_zen_client: Any | None = None
+_openrouter_client: Any | None = None
 _gpu_probe_warning_emitted = False
 _gpu_low_memory_observations = 0
 _last_gpu_status: dict[str, Any] | None = None
@@ -91,6 +106,84 @@ def _get_groq_client():
             return _groq_client
         except Exception as e:
             logger.error(f"Failed to initialize Groq client: {e}")
+    return None
+
+
+def _get_gemini_client():
+    global _gemini_client
+    if _gemini_client is not None:
+        return _gemini_client
+
+    settings = _get_settings()
+    gemini_key = (
+        (getattr(settings, "gemini_api_key", None) or "").strip()
+        or os.environ.get("GEMINI_API_KEY", "").strip()
+    )
+    if genai and gemini_key:
+        try:
+            _gemini_client = genai.Client(api_key=gemini_key)
+            logger.info("Google Gemini client initialized.")
+            return _gemini_client
+        except Exception as e:
+            logger.error(f"Failed to initialize Gemini client: {e}")
+    return None
+
+
+def _get_opencode_zen_client():
+    global _opencode_zen_client
+    if _opencode_zen_client is not None:
+        return _opencode_zen_client
+
+    settings = _get_settings()
+    zen_key = (
+        (getattr(settings, "opencode_zen_api_key", None) or "").strip()
+        or os.environ.get("OPENCODE_ZEN_API_KEY", "").strip()
+    )
+    base_url = (
+        (getattr(settings, "opencode_zen_base_url", None) or "").strip()
+        or os.environ.get("OPENCODE_ZEN_BASE_URL", "").strip()
+        or "https://opencode.ai/zen/v1"
+    )
+    if OpenAI and zen_key:
+        try:
+            _opencode_zen_client = OpenAI(base_url=base_url, api_key=zen_key, timeout=12.0)
+            logger.info("OpenCode Zen client initialized.")
+            return _opencode_zen_client
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenCode Zen client: {e}")
+    return None
+
+
+def _get_openrouter_client():
+    global _openrouter_client
+    if _openrouter_client is not None:
+        return _openrouter_client
+
+    settings = _get_settings()
+    router_key = (
+        (getattr(settings, "openrouter_api_key", None) or "").strip()
+        or os.environ.get("OPENROUTER_API_KEY", "").strip()
+    )
+    base_url = (
+        (getattr(settings, "openrouter_base_url", None) or "").strip()
+        or os.environ.get("OPENROUTER_BASE_URL", "").strip()
+        or "https://openrouter.ai/api/v1"
+    )
+    if OpenAI and router_key:
+        try:
+            _openrouter_client = OpenAI(
+                base_url=base_url,
+                api_key=router_key,
+                default_headers={
+                    "HTTP-Referer": "https://metagen-one.vercel.app",
+                    "X-Title": "MetaGen",
+                },
+                timeout=15.0,
+            )
+            logger.info("OpenRouter client initialized.")
+            return _openrouter_client
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenRouter client: {e}")
     return None
 
 
@@ -450,62 +543,102 @@ def _cap_max_tokens(requested: int, profile: str) -> int:
     return final_tokens
 
 
-def get_llm() -> Any:
-    """
-    Return the cached LLM instance, loading it on first call.
+_MODEL_CHOICE_TO_CATALOG_KEY = {
+    "mistral": "mistral-7b",
+    "mistral-7b": "mistral-7b",
+    "local-llama3": "llama-3.1-8b",
+    "llama-3.1-8b": "llama-3.1-8b",
+    "local-qwen": "qwen-2.5-7b",
+    "qwen-2.5-7b": "qwen-2.5-7b",
+    "local-phi4": "phi-4-mini",
+    "phi-4-mini": "phi-4-mini",
+}
 
-    The model is ~4.37 GB GGUF. With n_gpu_layers=-1, it is offloaded to GPU
-    when the active llama.cpp backend supports CUDA offload.
+_MODEL_CHAT_FORMATS = {
+    "mistral": "mistral-instruct",
+    "mistral-7b": "mistral-instruct",
+    "local-llama3": "llama-3",
+    "llama-3.1-8b": "llama-3",
+    "local-qwen": "chatml",
+    "qwen-2.5-7b": "chatml",
+    "local-phi4": "chatml",
+    "phi-4-mini": "chatml",
+}
+
+_current_local_model_choice: str | None = None
+
+
+def get_llm(model_choice: str = "mistral") -> Any:
     """
-    global _llm_instance
-    # Allow tests to patch the top-level `ai_engine._llm_instance` name.
-    # If present, prefer that (this keeps tests working when they patch the
-    # public module instead of the backend package module).
+    Return the cached LLM instance for the specified local model choice.
+    Safely switches models and evicts previous context to protect memory.
+    """
+    global _llm_instance, _current_local_model_choice
+    
+    # Allow tests to patch top-level ai_engine._llm_instance
     try:
         import sys
-
         ai_mod = sys.modules.get("ai_engine")
         if ai_mod is not None and hasattr(ai_mod, "_llm_instance") and ai_mod._llm_instance is not None:
             _llm_instance = ai_mod._llm_instance
     except Exception:
         pass
 
+    normalized = _normalize_model_choice(model_choice)
     if _llm_instance is not None:
-        return _llm_instance
+        if _current_local_model_choice == normalized or (normalized == "mistral" and _current_local_model_choice is None):
+            return _llm_instance
+        # Evict previous context to protect RAM
+        logger.info(
+            "Switching active local LLM from %s to %s. Evicting previous context...",
+            _current_local_model_choice,
+            normalized,
+        )
+        del _llm_instance
+        _llm_instance = None
+        import gc
+        gc.collect()
 
     llama_class, llama_backend = _load_llama_bindings()
-
-    # Load model if not already cached
     settings = _get_settings()
 
-    # Fail fast with a clear message if model path not provided.
-    if not settings.model_path:
-        raise RuntimeError(
-            "MODEL_PATH is not configured. Set the model path via the environment variable 'MODEL_PATH' or Settings.model_path."
-        )
+    catalog_key = _MODEL_CHOICE_TO_CATALOG_KEY.get(normalized, "mistral-7b")
+    from download_model import MODEL_CATALOG, download
+    info = MODEL_CATALOG.get(catalog_key)
+    target_filename = info["filename"] if info else settings.model_path
 
-    model_path = settings.model_path
-    # If a relative path was given but doesn't exist as-is, try common locations
-    if not os.path.isabs(model_path) and not os.path.exists(model_path):
-        candidates = [
-            model_path,
-            os.path.join("backend", model_path),
-            os.path.join("backend", "model", model_path),
-            os.path.join("model", model_path),
-        ]
-        for candidate in candidates:
-            if os.path.exists(candidate):
-                model_path = candidate
-                break
+    candidates = [
+        target_filename,
+        os.path.join("backend", "model", target_filename),
+        os.path.join("backend", target_filename),
+        os.path.join("model", target_filename),
+    ]
+    model_path = None
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            model_path = candidate
+            break
 
-    if not os.path.exists(model_path):
-        raise RuntimeError(f"Model path does not exist: {settings.model_path}")
+    # Fallback to settings.model_path if candidate not found
+    if not model_path or not os.path.exists(model_path):
+        if os.path.exists(settings.model_path):
+            model_path = settings.model_path
+        elif os.path.exists(os.path.join("backend", "model", settings.model_path)):
+            model_path = os.path.join("backend", "model", settings.model_path)
+        else:
+            raise RuntimeError(
+                f"Local model '{normalized}' ({target_filename}) is not found locally. "
+                f"Please download it via 'python download_model.py --model {catalog_key}'"
+            )
 
     threads = max(1, multiprocessing.cpu_count() - 2)
+    chat_format = _MODEL_CHAT_FORMATS.get(normalized, "mistral-instruct")
 
     logger.info(
-        "Loading GGUF model '%s' (threads=%d, gpu_layers=%d, batch=%d)",
+        "Loading GGUF model '%s' (choice=%s, format=%s, threads=%d, gpu_layers=%d, batch=%d)",
         model_path,
+        normalized,
+        chat_format,
         threads,
         settings.gpu_layers,
         settings.llm_batch_size,
@@ -519,9 +652,10 @@ def get_llm() -> Any:
         n_threads=threads,
         n_gpu_layers=settings.gpu_layers,
         flash_attn=True,
-        chat_format="mistral-instruct",
+        chat_format=chat_format,
         verbose=False,
     )
+    _current_local_model_choice = normalized
 
     logger.info("Model loaded successfully in %.2fs", perf_counter() - model_load_start)
     _log_llama_backend_capabilities(llama_backend)
@@ -1804,32 +1938,62 @@ def _cap_prompt_chars(prepped_input: str, max_chars: int) -> str:
 
 _last_used_model_name: str = "OpenAI GPT-OSS 120B (Groq)"
 
-_GROQ_MODEL_DISPLAY_NAMES = {
+_MODEL_DISPLAY_NAMES = {
     "openai/gpt-oss-120b": "OpenAI GPT-OSS 120B (Groq)",
     "openai/gpt-oss-20b": "OpenAI GPT-OSS 20B (Groq)",
     "qwen/qwen3.6-27b": "Qwen 3.6 27B (Groq)",
+    "gemini": "Gemini 3.6 Flash (Google)",
+    "gemini-3.6-flash": "Gemini 3.6 Flash (Google)",
+    "gemini-3.7-flash": "Gemini 3.7 Flash (Google)",
+    "opencode-zen": "Laguna 2.1 Free (OpenCode Zen)",
+    "laguna-s-2.1-free": "Laguna 2.1 Free (OpenCode Zen)",
+    "nemotron-3-ultra-free": "Nemotron 3 Ultra Free (OpenCode Zen)",
+    "big-pickle": "Big Pickle Free (OpenCode Zen)",
+    "openrouter": "Laguna 2.1 Free (OpenRouter)",
+    "poolside/laguna-s-2.1:free": "Laguna 2.1 Free (OpenRouter)",
+    "nvidia/nemotron-3-super-120b-a12b:free": "Nemotron 3 Super 120B Free (OpenRouter)",
+    "google/gemma-4-26b-a4b-it:free": "Gemma 4 26B Free (OpenRouter)",
     "mistral": "Mistral 7B (Custom HF)",
+    "mistral-7b": "Mistral 7B (Custom HF)",
+    "local-llama3": "Llama 3.1 8B (Custom HF)",
+    "llama-3.1-8b": "Llama 3.1 8B (Custom HF)",
+    "local-qwen": "Qwen 2.5 7B (Custom HF)",
+    "qwen-2.5-7b": "Qwen 2.5 7B (Custom HF)",
+    "local-phi4": "Phi-4 Mini 3.8B (Custom HF)",
+    "phi-4-mini": "Phi-4 Mini 3.8B (Custom HF)",
 }
 
 
 def _human_model_name(model_id_or_choice: str) -> str:
     """Return human-readable display label for a model identifier."""
-    if model_id_or_choice in _GROQ_MODEL_DISPLAY_NAMES:
-        return _GROQ_MODEL_DISPLAY_NAMES[model_id_or_choice]
-    cleaned = model_id_or_choice.replace("openai/", "").replace("qwen/", "")
-    return f"{cleaned.title()} (Groq)"
+    if model_id_or_choice in _MODEL_DISPLAY_NAMES:
+        return _MODEL_DISPLAY_NAMES[model_id_or_choice]
+    cleaned = model_id_or_choice.replace("openai/", "").replace("qwen/", "").replace(":free", "")
+    return f"{cleaned.title()}"
 
 
 def _normalize_model_choice(model_choice: str | None) -> str:
     choice = (model_choice or "auto").strip().lower()
-    if choice in ("mistral", "custom", "hf", "huggingface", "local"):
+    if choice in ("mistral", "custom", "hf", "huggingface", "local", "mistral-7b", "local-mistral"):
         return "mistral"
+    if choice in ("llama", "llama3", "llama-3", "llama-3.1", "llama3.1", "llama-3.1-8b", "local-llama3", "local-llama"):
+        return "local-llama3"
+    if choice in ("local-qwen", "qwen-local", "qwen-2.5", "qwen2.5", "qwen-2.5-7b", "qwen-7b", "local-qwen2.5"):
+        return "local-qwen"
+    if choice in ("phi", "phi4", "phi-4", "phi-4-mini", "local-phi4", "local-phi", "phi-4-3.8b"):
+        return "local-phi4"
     if choice in ("groq-120b", "openai/gpt-oss-120b", "120b", "groq", "cloud"):
         return "groq-120b"
     if choice in ("groq-20b", "openai/gpt-oss-20b", "20b"):
         return "groq-20b"
     if choice in ("qwen-27b", "qwen", "qwen3.6-27b"):
         return "qwen-27b"
+    if choice in ("gemini", "google", "gemini-flash", "gemini-3.6-flash", "gemini-3.7-flash"):
+        return "gemini"
+    if choice in ("opencode", "zen", "opencode-zen", "nemotron", "big-pickle"):
+        return "opencode-zen"
+    if choice in ("openrouter", "router", "openrouter/free"):
+        return "openrouter"
     return "auto"
 
 
@@ -1863,6 +2027,374 @@ def _get_groq_candidate_models(normalized_choice: str) -> list[str]:
     return candidates
 
 
+def _get_gemini_candidate_models(normalized_choice: str = "auto") -> list[str]:
+    """Return candidate model list for Google Gemini."""
+    settings = _get_settings()
+    primary = settings.gemini_model or "gemini-3.6-flash"
+    candidates = [primary]
+    fallback_models = getattr(
+        settings,
+        "gemini_fallback_models",
+        ["gemini-3.7-flash", "gemini-3.6-flash"],
+    )
+    if isinstance(fallback_models, str):
+        fallback_models = [m.strip() for m in fallback_models.split(",") if m.strip()]
+    for model_id in fallback_models:
+        if model_id and model_id not in candidates:
+            candidates.append(model_id)
+    return candidates
+
+
+def _call_gemini_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> dict:
+    """Call Google Gemini API and return parsed JSON dict with candidate failover."""
+    global _last_used_model_name
+    client = _get_gemini_client()
+    if not client:
+        raise RuntimeError("Gemini client not initialized or GEMINI_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_gemini_candidate_models()
+
+    last_err: Exception | None = None
+    for target_model in candidates:
+        try:
+            config = genai_types.GenerateContentConfig(
+                system_instruction=(
+                    system_prompt
+                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                    "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                    "Do NOT add conversational text. Output the raw JSON object directly."
+                ),
+                response_mime_type="application/json",
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+                max_output_tokens=max(max_tokens, 2048),
+            )
+            inference_start = perf_counter()
+            response = client.models.generate_content(
+                model=target_model,
+                contents=user_msg,
+                config=config,
+            )
+            elapsed = perf_counter() - inference_start
+            result_text = (response.text or "").strip()
+            _last_used_model_name = f"Gemini ({target_model})"
+            logger.info("Gemini LLM call completed in %.2fs (model=%s)", elapsed, target_model)
+            return _parse_json_safe(result_text)
+        except Exception as e:
+            logger.warning("Gemini model %s failed: %s", target_model, e)
+            last_err = e
+    raise RuntimeError(f"All Gemini models failed: {last_err}") from last_err
+
+
+def _stream_gemini_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> Generator[str, None, None]:
+    """Stream token chunks from Google Gemini API with candidate failover."""
+    global _last_used_model_name
+    client = _get_gemini_client()
+    if not client:
+        raise RuntimeError("Gemini client not initialized or GEMINI_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_gemini_candidate_models()
+
+    for target_model in candidates:
+        try:
+            config = genai_types.GenerateContentConfig(
+                system_instruction=(
+                    system_prompt
+                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                    "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                    "Do NOT add conversational text. Output the raw JSON object directly."
+                ),
+                response_mime_type="application/json",
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+                max_output_tokens=max(max_tokens, 2048),
+            )
+            _last_used_model_name = f"Gemini ({target_model})"
+            response_stream = client.models.generate_content_stream(
+                model=target_model,
+                contents=user_msg,
+                config=config,
+            )
+            yielded_any = False
+            for chunk in response_stream:
+                if chunk.text:
+                    cleaned = (
+                        chunk.text.replace("\u2011", "-")
+                        .replace("\u2013", "-")
+                        .replace("\u2014", "-")
+                        .replace("\u00a0", " ")
+                    )
+                    yielded_any = True
+                    yield cleaned
+            if yielded_any:
+                return
+        except Exception as e:
+            logger.warning("Gemini streaming for model %s failed: %s", target_model, e)
+    raise RuntimeError("All Gemini streaming candidates failed.")
+
+
+def _get_opencode_zen_candidate_models(normalized_choice: str = "auto") -> list[str]:
+    """Return candidate model list for OpenCode Zen."""
+    settings = _get_settings()
+    primary = settings.opencode_zen_model or "laguna-s-2.1-free"
+    candidates = [primary]
+    fallback_models = getattr(
+        settings,
+        "opencode_zen_fallback_models",
+        ["nemotron-3-ultra-free", "big-pickle"],
+    )
+    if isinstance(fallback_models, str):
+        fallback_models = [m.strip() for m in fallback_models.split(",") if m.strip()]
+    for model_id in fallback_models:
+        if model_id and model_id not in candidates:
+            candidates.append(model_id)
+    return candidates
+
+
+def _call_opencode_zen_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> dict:
+    """Call OpenCode Zen API and return parsed JSON dict."""
+    global _last_used_model_name
+    client = _get_opencode_zen_client()
+    if not client:
+        raise RuntimeError("OpenCode Zen client not initialized or OPENCODE_ZEN_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_opencode_zen_candidate_models()
+
+    last_err: Exception | None = None
+    for mid in candidates:
+        try:
+            zen_system_prompt = (
+                system_prompt
+                + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                "Do NOT add conversational text. Output the raw JSON object directly."
+            )
+            inference_start = perf_counter()
+            response = client.chat.completions.create(
+                model=mid,
+                messages=[
+                    {"role": "system", "content": zen_system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=max(max_tokens, 2048),
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+            )
+            elapsed = perf_counter() - inference_start
+            if not response or not getattr(response, "choices", None):
+                raise ValueError(f"Empty response choices for model {mid}")
+            choice = response.choices[0]
+            msg = getattr(choice, "message", None)
+            result_text = (getattr(msg, "content", "") or "").strip() if msg else ""
+            if not result_text:
+                raise ValueError(f"Empty message content for model {mid}")
+            _last_used_model_name = f"OpenCode Zen ({mid})"
+            logger.info("OpenCode Zen LLM call completed in %.2fs (model=%s)", elapsed, mid)
+            return _parse_json_safe(result_text)
+        except Exception as e:
+            logger.warning("OpenCode Zen model %s failed: %s", mid, e)
+            last_err = e
+
+    raise RuntimeError(f"All OpenCode Zen candidate models failed. Last error: {last_err}")
+
+
+def _stream_opencode_zen_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> Generator[str, None, None]:
+    """Stream token chunks from OpenCode Zen API."""
+    global _last_used_model_name
+    client = _get_opencode_zen_client()
+    if not client:
+        raise RuntimeError("OpenCode Zen client not initialized or OPENCODE_ZEN_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_opencode_zen_candidate_models()
+
+    for mid in candidates:
+        try:
+            zen_system_prompt = (
+                system_prompt
+                + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                "Do NOT add conversational text. Output the raw JSON object directly."
+            )
+            response = client.chat.completions.create(
+                model=mid,
+                messages=[
+                    {"role": "system", "content": zen_system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=max(max_tokens, 2048),
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+                stream=True,
+            )
+            _last_used_model_name = f"OpenCode Zen ({mid})"
+            for chunk in response:
+                delta = chunk.choices[0].delta if chunk.choices else None
+                content = delta.content if delta else None
+                if not content:
+                    continue
+                content = (
+                    content.replace("\u2011", "-")
+                    .replace("\u2013", "-")
+                    .replace("\u2014", "-")
+                    .replace("\u00a0", " ")
+                )
+                yield content
+            return
+        except Exception as e:
+            logger.warning("OpenCode Zen stream failed for model %s: %s", mid, e)
+
+    raise RuntimeError("All OpenCode Zen stream candidate models failed.")
+
+
+def _get_openrouter_candidate_models(normalized_choice: str = "auto") -> list[str]:
+    """Return candidate model list for OpenRouter."""
+    settings = _get_settings()
+    primary = settings.openrouter_model or "poolside/laguna-s-2.1:free"
+    candidates = [primary]
+    fallback_models = getattr(
+        settings,
+        "openrouter_fallback_models",
+        ["nvidia/nemotron-3-super-120b-a12b:free", "google/gemma-4-26b-a4b-it:free", "liquid/lfm-2.5-2.6b:free"],
+    )
+    if isinstance(fallback_models, str):
+        fallback_models = [m.strip() for m in fallback_models.split(",") if m.strip()]
+    for model_id in fallback_models:
+        if model_id and model_id not in candidates:
+            candidates.append(model_id)
+    return candidates
+
+
+def _call_openrouter_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> dict:
+    """Call OpenRouter API and return parsed JSON dict."""
+    global _last_used_model_name
+    client = _get_openrouter_client()
+    if not client:
+        raise RuntimeError("OpenRouter client not initialized or OPENROUTER_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_openrouter_candidate_models()
+
+    last_err: Exception | None = None
+    for mid in candidates:
+        try:
+            router_system_prompt = (
+                system_prompt
+                + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                "Do NOT add conversational text. Output the raw JSON object directly."
+            )
+            inference_start = perf_counter()
+            response = client.chat.completions.create(
+                model=mid,
+                messages=[
+                    {"role": "system", "content": router_system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=max(max_tokens, 2048),
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+            )
+            elapsed = perf_counter() - inference_start
+            if not response or not getattr(response, "choices", None):
+                raise ValueError(f"Empty response choices for model {mid}")
+            choice = response.choices[0]
+            msg = getattr(choice, "message", None)
+            result_text = (getattr(msg, "content", "") or "").strip() if msg else ""
+            if not result_text:
+                raise ValueError(f"Empty message content for model {mid}")
+            _last_used_model_name = f"OpenRouter ({mid})"
+            logger.info("OpenRouter LLM call completed in %.2fs (model=%s)", elapsed, mid)
+            return _parse_json_safe(result_text)
+        except Exception as e:
+            logger.warning("OpenRouter model %s failed: %s", mid, e)
+            last_err = e
+
+    raise RuntimeError(f"All OpenRouter candidate models failed. Last error: {last_err}")
+
+
+def _stream_openrouter_llm(
+    system_prompt: str,
+    user_msg: str,
+    max_tokens: int = 2048,
+    temperature: float | None = None,
+    model_id: str | None = None,
+) -> Generator[str, None, None]:
+    """Stream token chunks from OpenRouter API."""
+    global _last_used_model_name
+    client = _get_openrouter_client()
+    if not client:
+        raise RuntimeError("OpenRouter client not initialized or OPENROUTER_API_KEY missing.")
+    settings = _get_settings()
+    candidates = [model_id] if model_id else _get_openrouter_candidate_models()
+
+    for mid in candidates:
+        try:
+            router_system_prompt = (
+                system_prompt
+                + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                "Do NOT wrap the JSON in markdown formatting (e.g. no ```json). "
+                "Do NOT add conversational text. Output the raw JSON object directly."
+            )
+            response = client.chat.completions.create(
+                model=mid,
+                messages=[
+                    {"role": "system", "content": router_system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                max_tokens=max(max_tokens, 2048),
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+                stream=True,
+            )
+            _last_used_model_name = f"OpenRouter ({mid})"
+            for chunk in response:
+                delta = chunk.choices[0].delta if chunk.choices else None
+                content = delta.content if delta else None
+                if not content:
+                    continue
+                content = (
+                    content.replace("\u2011", "-")
+                    .replace("\u2013", "-")
+                    .replace("\u2014", "-")
+                    .replace("\u00a0", " ")
+                )
+                yield content
+            return
+        except Exception as e:
+            logger.warning("OpenRouter stream failed for model %s: %s", mid, e)
+
+    raise RuntimeError("All OpenRouter stream candidate models failed.")
+
+
 def get_last_used_model_name() -> str:
     return _last_used_model_name
 
@@ -1877,19 +2409,146 @@ def _llm_call(
     """Single non-streaming LLM call → parsed JSON dict. Respects model_choice with multi-tier fallback."""
     global _last_used_model_name
     settings = _get_settings()
-    groq = _get_groq_client()
     normalized_choice = _normalize_model_choice(model_choice)
 
-    if normalized_choice != "mistral":
-        if groq is None:
-            if _should_use_cpu_fast_profile():
-                raise RuntimeError(
-                    "Groq API key is not configured on the server. "
-                    "Please add GROQ_API_KEY to Hugging Face Space secrets (Settings -> Secrets) or select 'Mistral (Local CPU)'."
+    # 1. Explicit provider selections
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4"):
+        try:
+            llm = get_llm(normalized_choice)
+            inference_start = perf_counter()
+            response = llm.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=max_tokens,
+                temperature=settings.temperature if temperature is None else temperature,
+                top_p=settings.top_p,
+                repeat_penalty=settings.repeat_penalty,
+            )
+            elapsed = perf_counter() - inference_start
+            result_text = response["choices"][0]["message"]["content"].strip()
+            _last_used_model_name = _human_model_name(normalized_choice)
+            logger.info("Local LLM call completed in %.2fs (model=%s)", elapsed, normalized_choice)
+            return _parse_json_safe(result_text)
+        except Exception as local_err:
+            logger.warning(
+                "Local model '%s' execution failed (%s). Attempting cloud failover...",
+                normalized_choice,
+                local_err,
+            )
+            groq = _get_groq_client()
+            if groq is not None:
+                for model_id in _get_groq_candidate_models("auto"):
+                    try:
+                        inference_start = perf_counter()
+                        groq_system_prompt = (
+                            system_prompt
+                            + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                            "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                            "Do NOT add conversational text. Output the raw JSON object directly."
+                        )
+                        groq_max_tokens = max(max_tokens, 2048)
+                        groq_params: dict[str, Any] = {
+                            "messages": [
+                                {"role": "system", "content": groq_system_prompt},
+                                {"role": "user", "content": user_msg},
+                            ],
+                            "model": model_id,
+                            "max_tokens": groq_max_tokens,
+                            "temperature": settings.temperature if temperature is None else temperature,
+                            "top_p": settings.top_p,
+                        }
+                        if "gpt-oss" in model_id.lower():
+                            groq_params["response_format"] = {"type": "json_object"}
+
+                        response = groq.chat.completions.create(**groq_params)
+                        elapsed = perf_counter() - inference_start
+                        result_text = response.choices[0].message.content.strip()
+                        _last_used_model_name = f"{_human_model_name(normalized_choice)} (Cloud Fallback)"
+                        logger.info("Groq cloud fallback completed in %.2fs (model=%s)", elapsed, model_id)
+                        return _parse_json_safe(result_text)
+                    except Exception as e:
+                        logger.warning("Groq fallback failed: %s", e)
+            if _get_gemini_client() is not None:
+                try:
+                    res = _call_gemini_llm(system_prompt, user_msg, max_tokens, temperature)
+                    _last_used_model_name = f"{_human_model_name(normalized_choice)} (Cloud Fallback)"
+                    return res
+                except Exception:
+                    pass
+            raise local_err
+    elif normalized_choice == "gemini":
+        try:
+            return _call_gemini_llm(system_prompt, user_msg, max_tokens, temperature)
+        except Exception as e:
+            logger.error("Explicit Gemini LLM call failed: %s", e)
+            raise RuntimeError(f"Gemini generation failed: {e}") from e
+    elif normalized_choice == "opencode-zen":
+        try:
+            return _call_opencode_zen_llm(system_prompt, user_msg, max_tokens, temperature)
+        except Exception as e:
+            logger.error("Explicit OpenCode Zen LLM call failed: %s", e)
+            raise RuntimeError(f"OpenCode Zen generation failed: {e}") from e
+    elif normalized_choice == "openrouter":
+        try:
+            return _call_openrouter_llm(system_prompt, user_msg, max_tokens, temperature)
+        except Exception as e:
+            logger.error("Explicit OpenRouter LLM call failed: %s", e)
+            raise RuntimeError(f"OpenRouter generation failed: {e}") from e
+    elif normalized_choice in ("groq-120b", "groq-20b", "qwen-27b"):
+        groq = _get_groq_client()
+        if not groq:
+            raise RuntimeError("Groq API key is not configured on the server.")
+        candidates = _get_groq_candidate_models(normalized_choice)
+        for model_id in candidates:
+            try:
+                inference_start = perf_counter()
+                groq_system_prompt = (
+                    system_prompt
+                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                    "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                    "Do NOT add conversational text. Output the raw JSON object directly."
                 )
-            logger.warning("Groq API key not configured; falling back to local GPU.")
-        else:
-            candidates = _get_groq_candidate_models(normalized_choice)
+                groq_max_tokens = max(max_tokens, 2048)
+                groq_params: dict[str, Any] = {
+                    "messages": [
+                        {"role": "system", "content": groq_system_prompt},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "model": model_id,
+                    "max_tokens": groq_max_tokens,
+                    "temperature": settings.temperature if temperature is None else temperature,
+                    "top_p": settings.top_p,
+                }
+                if "gpt-oss" in model_id.lower():
+                    groq_params["response_format"] = {"type": "json_object"}
+
+                response = groq.chat.completions.create(**groq_params)
+                elapsed = perf_counter() - inference_start
+                result_text = response.choices[0].message.content.strip()
+                _last_used_model_name = _human_model_name(model_id)
+                logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, model_id)
+                return _parse_json_safe(result_text)
+            except Exception as e:
+                logger.warning("Groq model %s failed: %s", model_id, e)
+        raise RuntimeError(f"Groq generation failed for requested choice '{model_choice}'")
+
+    elif normalized_choice == "auto":
+        # -------------------------------------------------------------
+        # Multi-tier Unified Cascade:
+        # Tier 1: Groq LPUs (Fastest)
+        # Tier 2: Google Gemini (Generous Free)
+        # Tier 3: OpenCode Zen (Free Cloud Gateway)
+        # Tier 4: OpenRouter (Free Open-Source Gateway)
+        # Tier 5: Local CPU / GPU (Mistral GGUF)
+        # -------------------------------------------------------------
+
+        # Tier 1: Groq
+        groq = _get_groq_client()
+        if groq is not None:
+            candidates = _get_groq_candidate_models("auto")
             for model_id in candidates:
                 try:
                     inference_start = perf_counter()
@@ -1920,17 +2579,33 @@ def _llm_call(
                     logger.info("Groq LLM call completed in %.2fs (model=%s)", elapsed, model_id)
                     return _parse_json_safe(result_text)
                 except Exception as e:
-                    logger.warning("Groq model %s failed: %s", model_id, e)
-                    if normalized_choice != "auto" and len(candidates) == 1:
-                        logger.error("Explicit Groq model choice failed: %s", e)
-                        raise RuntimeError(f"Groq generation failed for {model_id}: {e}") from e
+                    logger.warning("Groq model %s failed in auto cascade: %s", model_id, e)
 
-            if normalized_choice != "auto":
-                raise RuntimeError(f"Groq generation failed for requested model choice '{model_choice}'")
-            logger.warning("All Groq candidate models failed; falling back to local model.")
+        # Tier 2: Google Gemini
+        if _get_gemini_client() is not None:
+            try:
+                return _call_gemini_llm(system_prompt, user_msg, max_tokens, temperature)
+            except Exception as e:
+                logger.warning("Gemini failed in auto cascade: %s", e)
 
-    # Fallback / explicit local llama-cpp (Custom Mistral 7B)
-    llm = get_llm()
+        # Tier 3: OpenCode Zen
+        if _get_opencode_zen_client() is not None:
+            try:
+                return _call_opencode_zen_llm(system_prompt, user_msg, max_tokens, temperature)
+            except Exception as e:
+                logger.warning("OpenCode Zen failed in auto cascade: %s", e)
+
+        # Tier 4: OpenRouter
+        if _get_openrouter_client() is not None:
+            try:
+                return _call_openrouter_llm(system_prompt, user_msg, max_tokens, temperature)
+            except Exception as e:
+                logger.warning("OpenRouter failed in auto cascade: %s", e)
+
+        logger.warning("All cloud providers in cascade failed or unconfigured; falling back to local model.")
+
+    # Fallback / Tier 5: Local model (Custom Mistral 7B)
+    llm = get_llm("mistral")
     inference_start = perf_counter()
     response = llm.create_chat_completion(
         messages=[
@@ -1945,7 +2620,7 @@ def _llm_call(
     )
     elapsed = perf_counter() - inference_start
     result_text = response["choices"][0]["message"]["content"].strip()
-    _last_used_model_name = "Mistral 7B Q4_K_M (Local CPU)"
+    _last_used_model_name = _human_model_name("mistral")
     logger.info("Local LLM call completed in %.2fs", elapsed)
     return _parse_json_safe(result_text)
 
@@ -1959,19 +2634,221 @@ def _llm_stream(
     """Streaming LLM call — yields individual token strings. Respects model_choice with multi-tier fallback."""
     global _last_used_model_name
     settings = _get_settings()
-    groq = _get_groq_client()
     normalized_choice = _normalize_model_choice(model_choice)
 
-    if normalized_choice != "mistral":
-        if groq is None:
-            if _should_use_cpu_fast_profile():
-                raise RuntimeError(
-                    "Groq API key is not configured on the server. "
-                    "Please add GROQ_API_KEY to Hugging Face Space secrets (Settings -> Secrets) or select 'Mistral (Local CPU)'."
+    # 1. Explicit provider selections
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4"):
+        try:
+            llm = get_llm(normalized_choice)
+            start = perf_counter()
+            token_count = 0
+            response = llm.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_msg},
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=max_tokens,
+                temperature=settings.temperature,
+                top_p=settings.top_p,
+                repeat_penalty=settings.repeat_penalty,
+                stream=True,
+            )
+
+            if isinstance(response, dict):
+                content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if content:
+                    token_count = 1
+                    yield content
+                _last_used_model_name = _human_model_name(normalized_choice)
+                logger.info(
+                    "Local LLM stream completed in %.2fs (%d chunks, model=%s)",
+                    perf_counter() - start,
+                    token_count,
+                    normalized_choice,
                 )
-            logger.warning("Groq API key not configured; falling back to local GPU.")
-        else:
-            candidates = _get_groq_candidate_models(normalized_choice)
+                return
+
+            for chunk in response:
+                delta = chunk.get("choices", [{}])[0].get("delta", {})
+                token = delta.get("content") or ""
+                if token:
+                    token_count += 1
+                    yield token
+
+            _last_used_model_name = _human_model_name(normalized_choice)
+            logger.info(
+                "Local LLM stream completed in %.2fs (%d chunks, model=%s)",
+                perf_counter() - start,
+                token_count,
+                normalized_choice,
+            )
+            return
+        except Exception as local_err:
+            logger.warning(
+                "Local model '%s' stream failed (%s). Attempting cloud failover...",
+                normalized_choice,
+                local_err,
+            )
+            groq = _get_groq_client()
+            if groq is not None:
+                for model_id in _get_groq_candidate_models("auto"):
+                    try:
+                        start = perf_counter()
+                        token_count = 0
+                        groq_system_prompt = (
+                            system_prompt
+                            + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                            "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                            "Do NOT add conversational text. Output the raw JSON object directly."
+                        )
+                        groq_max_tokens = max(max_tokens, 2048)
+                        groq_params: dict[str, Any] = {
+                            "messages": [
+                                {"role": "system", "content": groq_system_prompt},
+                                {"role": "user", "content": user_msg},
+                            ],
+                            "model": model_id,
+                            "max_tokens": groq_max_tokens,
+                            "temperature": settings.temperature,
+                            "top_p": settings.top_p,
+                            "stream": True,
+                        }
+                        if "gpt-oss" in model_id.lower():
+                            groq_params["response_format"] = {"type": "json_object"}
+
+                        response = groq.chat.completions.create(**groq_params)
+                        for chunk in response:
+                            content = chunk.choices[0].delta.content
+                            if not content:
+                                continue
+                            token_count += 1
+                            yield content
+
+                        if token_count > 0:
+                            _last_used_model_name = f"{_human_model_name(normalized_choice)} (Cloud Fallback)"
+                            logger.info(
+                                "Groq stream fallback completed in %.2fs (%d chunks, model=%s)",
+                                perf_counter() - start,
+                                token_count,
+                                model_id,
+                            )
+                            return
+                    except Exception as e:
+                        logger.warning("Groq fallback stream failed: %s", e)
+            if _get_gemini_client() is not None:
+                try:
+                    for chunk in _stream_gemini_llm(system_prompt, user_msg, max_tokens):
+                        yield chunk
+                    _last_used_model_name = f"{_human_model_name(normalized_choice)} (Cloud Fallback)"
+                    return
+                except Exception:
+                    pass
+            raise local_err
+
+    elif normalized_choice == "gemini":
+        try:
+            yield from _stream_gemini_llm(system_prompt, user_msg, max_tokens)
+            return
+        except Exception as e:
+            logger.error("Explicit Gemini streaming failed: %s", e)
+            raise RuntimeError(f"Gemini streaming failed: {e}") from e
+    elif normalized_choice == "opencode-zen":
+        try:
+            yield from _stream_opencode_zen_llm(system_prompt, user_msg, max_tokens)
+            return
+        except Exception as e:
+            logger.error("Explicit OpenCode Zen streaming failed: %s", e)
+            raise RuntimeError(f"OpenCode Zen streaming failed: {e}") from e
+    elif normalized_choice == "openrouter":
+        try:
+            yield from _stream_openrouter_llm(system_prompt, user_msg, max_tokens)
+            return
+        except Exception as e:
+            logger.error("Explicit OpenRouter streaming failed: %s", e)
+            raise RuntimeError(f"OpenRouter streaming failed: {e}") from e
+    elif normalized_choice in ("groq-120b", "groq-20b", "qwen-27b"):
+        groq = _get_groq_client()
+        if not groq:
+            raise RuntimeError("Groq API key is not configured on the server.")
+        candidates = _get_groq_candidate_models(normalized_choice)
+        for model_id in candidates:
+            try:
+                start = perf_counter()
+                token_count = 0
+                groq_system_prompt = (
+                    system_prompt
+                    + "\n\nYou are a strict API. Output ONLY valid JSON. "
+                    "Do NOT wrap the JSON in markdown formatting (e.g., no ```json). "
+                    "Do NOT add conversational text. Output the raw JSON object directly."
+                )
+                groq_max_tokens = max(max_tokens, 2048)
+                groq_params: dict[str, Any] = {
+                    "messages": [
+                        {"role": "system", "content": groq_system_prompt},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    "model": model_id,
+                    "max_tokens": groq_max_tokens,
+                    "temperature": settings.temperature,
+                    "top_p": settings.top_p,
+                    "stream": True,
+                }
+                if "gpt-oss" in model_id.lower():
+                    groq_params["response_format"] = {"type": "json_object"}
+
+                response = groq.chat.completions.create(**groq_params)
+                in_think_block = False
+                for chunk in response:
+                    content = chunk.choices[0].delta.content
+                    if not content:
+                        continue
+                    content = (
+                        content.replace("\u2011", "-")
+                        .replace("\u2013", "-")
+                        .replace("\u2014", "-")
+                        .replace("\u00a0", " ")
+                    )
+                    if "<think>" in content:
+                        in_think_block = True
+                    if in_think_block:
+                        if "</think>" in content:
+                            in_think_block = False
+                            content = content.split("</think>", 1)[1]
+                            if not content.strip():
+                                continue
+                        else:
+                            continue
+                    token_count += 1
+                    yield content
+
+                if token_count > 0:
+                    _last_used_model_name = _human_model_name(model_id)
+                    logger.info(
+                        "Groq stream completed in %.2fs (%d chunks, model=%s)",
+                        perf_counter() - start,
+                        token_count,
+                        model_id,
+                    )
+                    return
+            except Exception as e:
+                logger.warning("Groq streaming for model %s failed: %s", model_id, e)
+        raise RuntimeError(f"Groq streaming failed for requested choice '{model_choice}'")
+
+    elif normalized_choice == "auto":
+        # -------------------------------------------------------------
+        # Multi-tier Unified Cascade:
+        # Tier 1: Groq LPUs (Fastest)
+        # Tier 2: Google Gemini (Generous Free)
+        # Tier 3: OpenCode Zen (Free Cloud Gateway)
+        # Tier 4: OpenRouter (Free Open-Source Gateway)
+        # Tier 5: Local CPU / GPU (Mistral GGUF)
+        # -------------------------------------------------------------
+
+        # Tier 1: Groq
+        groq = _get_groq_client()
+        if groq is not None:
+            candidates = _get_groq_candidate_models("auto")
             for model_id in candidates:
                 try:
                     start = perf_counter()
@@ -2003,16 +2880,12 @@ def _llm_stream(
                         content = chunk.choices[0].delta.content
                         if not content:
                             continue
-
-                        # Sanitize unicode dashes and non-breaking spaces
                         content = (
                             content.replace("\u2011", "-")
                             .replace("\u2013", "-")
                             .replace("\u2014", "-")
                             .replace("\u00a0", " ")
                         )
-
-                        # Suppress and strip reasoning <think>...</think> blocks from models like Qwen
                         if "<think>" in content:
                             in_think_block = True
                         if in_think_block:
@@ -2023,7 +2896,6 @@ def _llm_stream(
                                     continue
                             else:
                                 continue
-
                         token_count += 1
                         yield content
 
@@ -2036,20 +2908,55 @@ def _llm_stream(
                             model_id,
                         )
                         return
-
-                    logger.warning("Groq stream for model %s produced 0 content chunks; attempting next candidate", model_id)
                 except Exception as e:
-                    logger.warning("Groq streaming for model %s failed: %s", model_id, e)
-                    if normalized_choice != "auto" and len(candidates) == 1:
-                        logger.error("Explicit Groq stream failed: %s", e)
-                        raise RuntimeError(f"Groq streaming failed for {model_id}: {e}") from e
+                    logger.warning("Groq stream for model %s failed in auto cascade: %s", model_id, e)
 
-            if normalized_choice != "auto":
-                raise RuntimeError(f"Groq streaming failed for requested model choice '{model_choice}'")
-            logger.warning("All Groq streaming candidates failed; falling back to local model.")
+        # Tier 2: Gemini
+        if _get_gemini_client() is not None:
+            try:
+                start = perf_counter()
+                token_count = 0
+                for chunk in _stream_gemini_llm(system_prompt, user_msg, max_tokens):
+                    token_count += 1
+                    yield chunk
+                if token_count > 0:
+                    logger.info("Gemini stream completed in %.2fs (%d chunks)", perf_counter() - start, token_count)
+                    return
+            except Exception as e:
+                logger.warning("Gemini stream failed in auto cascade: %s", e)
 
-    # Fallback / explicit local llama-cpp (Custom Mistral 7B)
-    llm = get_llm()
+        # Tier 3: OpenCode Zen
+        if _get_opencode_zen_client() is not None:
+            try:
+                start = perf_counter()
+                token_count = 0
+                for chunk in _stream_opencode_zen_llm(system_prompt, user_msg, max_tokens):
+                    token_count += 1
+                    yield chunk
+                if token_count > 0:
+                    logger.info("OpenCode Zen stream completed in %.2fs (%d chunks)", perf_counter() - start, token_count)
+                    return
+            except Exception as e:
+                logger.warning("OpenCode Zen stream failed in auto cascade: %s", e)
+
+        # Tier 4: OpenRouter
+        if _get_openrouter_client() is not None:
+            try:
+                start = perf_counter()
+                token_count = 0
+                for chunk in _stream_openrouter_llm(system_prompt, user_msg, max_tokens):
+                    token_count += 1
+                    yield chunk
+                if token_count > 0:
+                    logger.info("OpenRouter stream completed in %.2fs (%d chunks)", perf_counter() - start, token_count)
+                    return
+            except Exception as e:
+                logger.warning("OpenRouter stream failed in auto cascade: %s", e)
+
+        logger.warning("All cloud streaming providers failed; falling back to local model.")
+
+    # Tier 5: Local model fallback
+    llm = get_llm("mistral")
     start = perf_counter()
     token_count = 0
     response = llm.create_chat_completion(
@@ -2065,7 +2972,6 @@ def _llm_stream(
         stream=True,
     )
 
-    # Some backends/tests return non-stream payloads even with stream=True.
     if isinstance(response, dict):
         content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
         if content:
@@ -2082,11 +2988,11 @@ def _llm_stream(
         return
 
     for chunk in response:
-        choice = chunk["choices"][0]
-        content = choice.get("delta", {}).get("content", "")
-        if content:
+        delta = chunk.get("choices", [{}])[0].get("delta", {})
+        token = delta.get("content") or ""
+        if token:
             token_count += 1
-            yield content
+            yield token
 
     _last_used_model_name = _human_model_name("mistral")
     logger.info(

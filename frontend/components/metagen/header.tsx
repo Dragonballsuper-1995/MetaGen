@@ -6,6 +6,7 @@ import { Moon, Sun, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModelChoice } from "@/lib/types"
 
+
 interface HeaderProps {
   selectedModel?: ModelChoice
   onModelChange?: (model: ModelChoice) => void

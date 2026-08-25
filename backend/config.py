@@ -148,6 +148,37 @@ class Settings(BaseSettings):
         default=["openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
         description="Ordered list of cloud fallback models if primary model encounters rate-limits or errors",
     )
+    gemini_api_key: str = Field(default="", description="Google AI Studio / Gemini API key")
+    gemini_model: str = Field(
+        default="gemini-3.6-flash",
+        description="Primary Gemini model ID (e.g. gemini-3.6-flash, gemini-3.7-flash)",
+    )
+    openrouter_api_key: str = Field(default="", description="OpenRouter API key")
+    openrouter_model: str = Field(
+        default="poolside/laguna-s-2.1:free",
+        description="OpenRouter model ID (e.g. poolside/laguna-s-2.1:free, nvidia/nemotron-3-super-120b-a12b:free)",
+    )
+    openrouter_fallback_models: list[str] = Field(
+        default=["nvidia/nemotron-3-super-120b-a12b:free", "google/gemma-4-26b-a4b-it:free", "liquid/lfm-2.5-2.6b:free"],
+        description="Fallback free models for OpenRouter",
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        description="OpenRouter API base URL",
+    )
+    opencode_zen_api_key: str = Field(default="", description="OpenCode Zen API key")
+    opencode_zen_model: str = Field(
+        default="laguna-s-2.1-free",
+        description="OpenCode Zen model ID (e.g. laguna-s-2.1-free, nemotron-3-ultra-free, big-pickle)",
+    )
+    opencode_zen_fallback_models: list[str] = Field(
+        default=["nemotron-3-ultra-free", "big-pickle"],
+        description="Fallback models for OpenCode Zen",
+    )
+    opencode_zen_base_url: str = Field(
+        default="https://opencode.ai/zen/v1",
+        description="OpenCode Zen API base URL",
+    )
     youtube_api_key: str = Field(default="", description="YouTube Data API key")
 
     # --- Security ---

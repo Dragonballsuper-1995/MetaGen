@@ -12,6 +12,8 @@ import {
   BookOpen,
   Cpu,
   Zap,
+  Globe,
+  Bot,
 } from "lucide-react"
 import { MetadataResult, ModelChoice } from "@/lib/types"
 
@@ -35,24 +37,20 @@ interface TerminalCoreProps {
 const SAMPLE_PRESETS = [
   {
     name: "Tech Review",
-    text: "Unboxing and complete engineering teardown of the newest tactile portable synthesizer. We analyze the custom aluminum chassis, PCB routing, mechanical rotary encoders, low-noise DAC convertors, and how physical-digital design principles create an unforgettable user experience.",
+    text:
+      "Welcome back, everyone! In today's video, we are reviewing the newest flagship smartphone to hit the market. We're testing battery life, camera performance, low-light video capabilities, and gaming benchmarks. If you're deciding whether to upgrade this year, you've come to the right place!",
   },
   {
-    name: "Vlog / Lifestyle",
-    text: "Join me on a 48-hour solo photography trip to the foggy mountains of Kyoto. I share my street photography camera settings, composition techniques, finding hidden espresso bars, and reflecting on creative burnout and finding inspiration in daily routines.",
+    name: "Tutorial & Tips",
+    text:
+      "Hey developers! In this step-by-step tutorial, we're building a full-stack Next.js application integrated with FastAPI and Docker. We'll cover environment setup, state management, asynchronous queue workers with Celery and Redis, and deploying everything live to production with zero downtime.",
   },
   {
-    name: "Educational",
-    text: "Welcome back to the channel! Today we're diving deep into the architecture of neural networks and how transformers process natural language. We'll explore attention mechanisms, token embeddings, and how modern LLMs understand context to generate human-like code and text.",
-  },
-  {
-    name: "Architecture",
-    text: "In this video, we dive deep into the world of sustainable architecture. We'll explore how modern skyscrapers are incorporating vertical forests, advanced solar harvesting, and closed-loop water systems from Singapore's Jewel Changi to Milan's Bosco Verticale.",
+    name: "Story & Vlog",
+    text:
+      "What is up, guys! Today, we are taking you behind the scenes of our 48-hour journey through Tokyo, Japan. From finding the most incredible hidden street food spots to exploring futuristic digital art museums, this trip pushed us way outside our comfort zone. Drop a comment with your favorite travel destination!",
   },
 ]
-
-// Height of the collapsed pill bar in pixels
-const COLLAPSED_HEIGHT = 60
 
 export function TerminalCore({
   appState,
@@ -63,7 +61,7 @@ export function TerminalCore({
   selectedModel = "auto",
   onModelChange,
   streamTokens = "",
-  streamProgressPercent,
+  streamProgressPercent = 0,
   streamTags = null,
   streamError = null,
   onRetry,
@@ -71,11 +69,11 @@ export function TerminalCore({
   const [script, setScript] = React.useState("")
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [selectedPresetIndex, setSelectedPresetIndex] = React.useState<number | null>(null)
-  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
-  const cardRef = React.useRef<HTMLDivElement | null>(null)
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const cardRef = React.useRef<HTMLDivElement>(null)
 
   const wordCount = React.useMemo(() => {
-    return script.trim() ? script.trim().split(/\s+/).length : 0
+    return script.trim().split(/\s+/).filter(Boolean).length
   }, [script])
 
   const estSpeakingTime = React.useMemo(() => {
@@ -140,7 +138,7 @@ export function TerminalCore({
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center flex-1 h-full min-h-0 py-2">
+    <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center h-full py-2">
       {/* 1. INPUT STAGE */}
       {appState === "input" && (
         <div className="w-full max-w-4xl flex flex-col items-center text-center gap-4 sm:gap-6 my-auto">
@@ -148,7 +146,7 @@ export function TerminalCore({
           <div className="flex flex-col items-center gap-2">
             {/* Model Selector Pill */}
             {onModelChange && (
-              <div className="inline-flex items-center p-1 bg-surface border border-border rounded-full shadow-sm overflow-x-auto max-w-[90vw] md:max-w-full hide-scrollbar">
+              <div className="inline-flex items-center p-1 bg-surface border border-border rounded-full shadow-sm overflow-x-auto max-w-[90vw] md:max-w-full hide-scrollbar gap-1">
                 <button
                   type="button"
                   onClick={() => onModelChange("auto")}
@@ -157,35 +155,52 @@ export function TerminalCore({
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
+                  title="Automatic multi-tier failover: Groq -> Gemini -> Zen -> OpenRouter -> Local"
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>Auto</span>
+                  <span>Auto Cloud</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => onModelChange("groq")}
+                  onClick={() => onModelChange("phi-4-mini")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "groq"
+                    selectedModel === "phi-4-mini"
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
-                >
-                  <Zap className="w-3 h-3" />
-                  <span>Groq 120B</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("groq-20b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "groq-20b"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  title="Microsoft Phi-4 Mini 3.8B (Ultra-fast lightweight fine-tune)"
                 >
                   <Zap className="w-3 h-3 text-emerald-400" />
-                  <span>Groq 20B</span>
+                  <span>Phi-4 Mini</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onModelChange("qwen-2.5-7b")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "qwen-2.5-7b"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Alibaba Qwen 2.5 7B (Fine-tuned for structured tag relevance)"
+                >
+                  <Bot className="w-3 h-3 text-cyan-400" />
+                  <span>Qwen 2.5</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onModelChange("llama-3.1-8b")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "llama-3.1-8b"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Meta Llama 3.1 8B (Fine-tuned for high CTR hooks)"
+                >
+                  <Cpu className="w-3 h-3 text-blue-400" />
+                  <span>Llama 3.1</span>
                 </button>
 
                 <button
@@ -196,9 +211,38 @@ export function TerminalCore({
                       ? "bg-primary text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
+                  title="Custom Fine-Tuned Mistral 7B (Local GGUF)"
                 >
-                  <Cpu className="w-3 h-3" />
+                  <Cpu className="w-3 h-3 text-orange-400" />
                   <span>Mistral 7B</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onModelChange("gemini")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "gemini"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Google Gemini 3.6 Flash (1M+ Token Context)"
+                >
+                  <Globe className="w-3 h-3 text-sky-400" />
+                  <span>Gemini 3.6</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onModelChange("groq")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "groq"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Groq LPU Ultra-Fast Inference"
+                >
+                  <Zap className="w-3 h-3 text-amber-400" />
+                  <span>Groq 120B</span>
                 </button>
               </div>
             )}
@@ -212,7 +256,6 @@ export function TerminalCore({
               Transform scripts into SEO-optimized titles, descriptions, and tags in seconds.
             </p>
           </div>
-
 
           {/* ─── SINGLE CONTINUOUS PHYSICAL MORPHING CARD ─────────────── */}
           <div className="w-full flex justify-center">
@@ -347,7 +390,7 @@ export function TerminalCore({
 
       {/* 3. STUDIO RESULTS STAGE */}
       {appState === "output" && result && (
-        <div className="w-full flex-1 h-full min-h-0 flex flex-col justify-center">
+        <div className="w-full h-full min-h-0 flex flex-col">
           <OutputGrid result={result} sourceScript={script} onReset={onReset} />
         </div>
       )}
