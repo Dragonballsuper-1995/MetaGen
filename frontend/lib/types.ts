@@ -4,6 +4,8 @@
 
 export type ModelChoice =
   | "auto"
+  | "qwen-2.5-1.5b"
+  | "llama-3.2-1b"
   | "phi-4-mini"
   | "qwen-2.5-7b"
   | "llama-3.1-8b"

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getTitleVariants } from "@/lib/api";
 import type { GenerationStatus, ModelChoice } from "@/lib/types";
 
+/**
+ * @deprecated Legacy standalone title variant fetcher hook.
+ * Output title variants and angles in MetaGen Studio are rendered directly via `output-grid.tsx`.
+ */
 export function useTitleVariants(
   generationStatus: GenerationStatus,
   generatedTitle?: string,

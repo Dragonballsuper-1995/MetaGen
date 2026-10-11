@@ -163,6 +163,34 @@ export function TerminalCore({
 
                 <button
                   type="button"
+                  onClick={() => onModelChange("qwen-2.5-1.5b")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "qwen-2.5-1.5b"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Alibaba Qwen 2.5 1.5B (Ultra-fast SLM, ~35 tok/s CPU)"
+                >
+                  <Bot className="w-3 h-3 text-cyan-300" />
+                  <span>Qwen 1.5B</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onModelChange("llama-3.2-1b")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                    selectedModel === "llama-3.2-1b"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title="Meta Llama 3.2 1B (Ultra-lightweight SLM, ~40 tok/s CPU)"
+                >
+                  <Cpu className="w-3 h-3 text-indigo-400" />
+                  <span>Llama 1B</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => onModelChange("phi-4-mini")}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                     selectedModel === "phi-4-mini"
@@ -323,6 +351,9 @@ export function TerminalCore({
                 {/* Editor Frame */}
                 <div className="morph-editor-frame">
                   <textarea
+                    id="script-input"
+                    name="script_content"
+                    aria-label="Video script or description"
                     ref={textareaRef}
                     placeholder="Describe your video or paste script here..."
                     value={script}
@@ -384,6 +415,7 @@ export function TerminalCore({
             error={streamError}
             onRetry={onRetry}
             onCancel={onReset}
+            modelChoice={selectedModel}
           />
         </div>
       )}

@@ -13,6 +13,39 @@ interface LoadingMatrixProps {
   error?: string | null
   onRetry?: () => void
   onCancel?: () => void
+  modelChoice?: string
+}
+
+function getModelStreamLabel(choice?: string): string {
+  switch (choice) {
+    case "mistral":
+    case "mistral-7b":
+      return "Local GGUF CPU Stream"
+    case "gemini":
+      return "Google Gemini Stream"
+    case "groq":
+    case "groq-120b":
+    case "groq-20b":
+      return "Groq LPU Stream"
+    case "qwen-2.5-1.5b":
+      return "Qwen 1.5B SLM Stream"
+    case "llama-3.2-1b":
+      return "Llama 1B SLM Stream"
+    case "phi-4-mini":
+      return "Phi-4 Mini Stream"
+    case "qwen-2.5-7b":
+      return "Qwen 2.5 Stream"
+    case "llama-3.1-8b":
+      return "Llama 3.1 Stream"
+    case "opencode-zen":
+      return "OpenCode Zen Stream"
+    case "openrouter":
+      return "OpenRouter Stream"
+    case "auto":
+      return "Auto Cloud Stream"
+    default:
+      return choice ? `${choice} Stream` : "Neural Inference Stream"
+  }
 }
 
 export function LoadingMatrix({
@@ -23,6 +56,7 @@ export function LoadingMatrix({
   error = null,
   onRetry,
   onCancel,
+  modelChoice,
 }: LoadingMatrixProps) {
   const [internalStep, setInternalStep] = React.useState(0)
   const [internalProgress, setInternalProgress] = React.useState(24)
@@ -198,7 +232,7 @@ export function LoadingMatrix({
                 <div className="p-3.5 rounded-xl bg-black/40 border border-border/60 font-mono text-xs text-foreground/80 max-h-[140px] overflow-y-auto leading-relaxed flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5 text-primary text-[10px] uppercase tracking-wider font-semibold">
                     <Terminal className="w-3 h-3" />
-                    <span>LPU Inference Stream</span>
+                    <span>{getModelStreamLabel(modelChoice)}</span>
                   </div>
                   <p className="whitespace-pre-wrap">
                     {streamTokens.slice(-350)}

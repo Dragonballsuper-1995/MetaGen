@@ -111,6 +111,16 @@ class Settings(BaseSettings):
         le=3000,
         description="Max prompt characters to feed into streaming generation paths",
     )
+    cloud_tier_timeout_s: float = Field(
+        default=3.5,
+        ge=1.0,
+        le=30.0,
+        description="Per-tier timeout deadline in seconds for cloud LLM calls",
+    )
+    fast_outage_skip_enabled: bool = Field(
+        default=True,
+        description="Immediately skip remaining models in tier on network or 5xx outage",
+    )
     gpu_active_memory_threshold_mb: int = Field(
         default=256,
         ge=0,
@@ -145,13 +155,13 @@ class Settings(BaseSettings):
         description="Primary Groq model ID for cloud inference (e.g. openai/gpt-oss-120b)",
     )
     groq_fallback_models: list[str] = Field(
-        default=["openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
+        default=["openai/gpt-oss-20b", "qwen/qwen3.8-27b"],
         description="Ordered list of cloud fallback models if primary model encounters rate-limits or errors",
     )
     gemini_api_key: str = Field(default="", description="Google AI Studio / Gemini API key")
     gemini_model: str = Field(
-        default="gemini-3.6-flash",
-        description="Primary Gemini model ID (e.g. gemini-3.6-flash, gemini-3.7-flash)",
+        default="gemini-3.8-flash",
+        description="Primary Gemini model ID (e.g. gemini-3.8-flash, gemini-3.7-flash, gemini-3.6-flash)",
     )
     openrouter_api_key: str = Field(default="", description="OpenRouter API key")
     openrouter_model: str = Field(

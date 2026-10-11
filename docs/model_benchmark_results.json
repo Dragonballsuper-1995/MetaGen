@@ -1,0 +1,424 @@
+{
+  "auto": {
+    "label": "Auto Multi-Tier Cascade",
+    "status": "success",
+    "latency_s": 6.35,
+    "model_used": "OpenAI GPT-OSS 120B (Groq)",
+    "title": "Build an AI Agent using Next.js 16, FastAPI, Llama.cpp",
+    "description": "Ever wondered how to stitch together a full-stack autonomous AI assistant that runs entirely on open-source models? In this video we walk through building a production-ready system from the ground up, leveraging Next.js 16 for the front-end, FastAPI in Python for the back-end, and llama.cpp to serve local LLMs efficiently. You\u2019ll see how to configure server-side rendering, set up secure API routes, and integrate a quantized Llama model that runs on modest hardware. Key takeaways include: wiring real-time prompt handling between the UI and the Python service, optimizing inference latency with llama.cpp\u2019s cache, and deploying the stack with Docker for reproducible environments. We also cover best practices for error handling, logging, and scaling the agent as user demand grows. By the end of the tutorial you\u2019ll have a working autonomous agent you can extend with your own tools and plugins. Smash the like button, subscribe for more deep-dive builds, and drop your questions below - we\u2019ll answer them in the next episode!",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 91.0,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 100.0,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "python",
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 54,
+      "title_words": 9,
+      "title_valid": true,
+      "desc_chars": 1031,
+      "desc_words": 162,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "groq-120b": {
+    "label": "Groq LPU (GPT-OSS 120B / 20B)",
+    "status": "success",
+    "latency_s": 4.63,
+    "model_used": "OpenAI GPT-OSS 120B (Groq)",
+    "title": "Create a Production-Grade AI Agent with Next.js 16 & FastAPI",
+    "description": "Ever imagined launching a production-ready autonomous AI agent without leaving your laptop? In this video we walk through constructing the entire stack from the ground up, pairing Next.js 16 for a blazing-fast React front-end with a FastAPI backend that orchestrates local open-source LLMs powered by llama.cpp. You\u2019ll see how to configure the API routes, stream responses in real time, and integrate a dynamic UI that lets users trigger tasks, view logs, and adjust model parameters on the fly. Key takeaways include: setting up a scalable Next.js 16 project, wiring FastAPI to serve llama.cpp inference, handling token streaming efficiently, and deploying the system locally with Docker for reproducibility. By the end you\u2019ll have a fully functional autonomous agent you can extend with your own tools and prompts. If you found this guide useful, smash the like button, subscribe with notifications, and drop your questions or project ideas in the comments below. Let\u2019s build the future together!",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 91.0,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 100.0,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 75.0,
+      "key_terms_covered": [
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 60,
+      "title_words": 10,
+      "title_valid": true,
+      "desc_chars": 998,
+      "desc_words": 155,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "groq-20b": {
+    "label": "Groq LPU (GPT-OSS 20B)",
+    "status": "success",
+    "latency_s": 6.32,
+    "model_used": "OpenAI GPT-OSS 120B (Groq)",
+    "title": "Build an Autonomous AI Agent with Next.js 16 & FastAPI",
+    "description": "Ever wondered how to stitch together a real-world autonomous AI agent from scratch? In this high-energy tutorial we walk you through building a production-ready system using Next.js 16 for the front-end, FastAPI in Python for the back-end, and local open-source LLMs powered by llama.cpp. You\u2019ll see how to spin up a responsive UI, wire it to a robust API layer, and orchestrate the language model to act independently. Key takeaways include setting up a scalable Next.js project, exposing inference endpoints with FastAPI, and optimizing llama.cpp performance on commodity hardware. By the end you\u2019ll have a fully functional agent that can process requests, make decisions, and return results without external cloud services. Ready to level up your AI stack? Hit the like button, subscribe with notifications, and drop your questions in the comments - let\u2019s build the future together! Today we are building a production-grade Autonomous AI Agent system from scratch using Next.js 16, FastAPI in Python, and local open-source LLMs running with llama.cpp.",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 91.0,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 100.0,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "python",
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 54,
+      "title_words": 10,
+      "title_valid": true,
+      "desc_chars": 1054,
+      "desc_words": 163,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "qwen-27b": {
+    "label": "Groq LPU (Qwen 3.8 27B)",
+    "status": "success",
+    "latency_s": 0.67,
+    "model_used": "Qwen 3.8 27B (Groq)",
+    "title": "Build Autonomous AI Agents with Next.js and FastAPI",
+    "description": "Stop relying on expensive cloud APIs and start building fully self-contained intelligence. This deep dive guides you through constructing a robust, production-ready autonomous agent ecosystem using the latest Next.js 16 frontend, a high-performance FastAPI backend, and local open-source models powered by llama.cpp. You will learn how to orchestrate complex reasoning loops that operate entirely on your own hardware, ensuring maximum privacy and zero recurring inference costs. We break down the architecture step-by-step, showing you how to wire up real-time communication between the React interface and the Python engine while managing state for multi-step tasks. By the end, you will have a functional system capable of executing independent workflows without human intervention. This is not just a tutorial; it is a blueprint for modern, decentralized AI development. If you are ready to take control of your AI infrastructure and master the art of local LLM deployment, this video is your essential roadmap. Do not miss out on the future of autonomous computing. Hit that subscribe button, enable notifications to stay ahead of the curve, and share your technical questions in the comments below to help us refine the next build.",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 90.2,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 97.8,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "python",
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 51,
+      "title_words": 8,
+      "title_valid": true,
+      "desc_chars": 1237,
+      "desc_words": 189,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "gemini": {
+    "label": "Google Gemini 3.6 Flash",
+    "status": "success",
+    "latency_s": 40.28,
+    "model_used": "OpenAI GPT-OSS 20B (Groq)",
+    "title": "Build an Autonomous AI Agent with Next.js 16 & FastAPI",
+    "description": "Ever wondered how to turn a simple idea into a fully autonomous AI agent? In this episode, we walk through every step-from setting up a Next.js 16 front-end to wiring a FastAPI back-end that talks to a local llama.cpp LLM. You\u2019ll see how to orchestrate the components, handle real-time data streams, and secure the whole stack. Key takeaways include: 1) the architecture that keeps the agent responsive and scalable, 2) practical tips for integrating llama.cpp without cloud costs, and 3) debugging tricks that save hours of frustration. By the end, you\u2019ll have a working prototype you can extend to your own projects. Ready to code? Grab the repo link in the description, hit the like button, and let us know what you build next! We also dive into authentication with JWT, explain how to deploy the stack using Docker Compose, and showcase a live demo of the agent responding to user prompts in real time. The session ends with a quick Q&A segment where we answer common pitfalls like memory leaks in llama.cpp and latency in FastAPI endpoints.",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 90.2,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 97.8,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 75.0,
+      "key_terms_covered": [
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 54,
+      "title_words": 10,
+      "title_valid": true,
+      "desc_chars": 1045,
+      "desc_words": 178,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "opencode-zen": {
+    "label": "OpenCode Zen (Laguna 2.1 Free)",
+    "status": "success",
+    "latency_s": 4.62,
+    "model_used": "OpenAI GPT-OSS 120B (Groq)",
+    "title": "Build an Autonomous AI Agent with Next.js 16 & FastAPI",
+    "description": "Ready to watch a production-grade autonomous AI agent spring to life? In this high-energy tutorial we walk you through constructing the entire stack from the ground up, using Next.js 16 for a slick web interface, FastAPI in Python to orchestrate the backend, and llama.cpp to run powerful open-source LLMs locally. You\u2019ll learn how to scaffold a Next.js 16 project, expose REST endpoints with FastAPI, and pipe prompts to a llama.cpp-powered model without leaving your machine. Key takeaways include wiring real-time communication between the front-end and the Python server, optimizing llama.cpp for low-latency inference, and packaging the whole system for easy deployment. By the end you\u2019ll have a fully functional autonomous agent that can reason, act, and respond on its own. If you enjoyed the walkthrough, smash the like button, subscribe with notifications turned on, and drop your questions or project ideas in the comments below. Dive in and start building your own AI powerhouse today!",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 91.0,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 100.0,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "python",
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 54,
+      "title_words": 10,
+      "title_valid": true,
+      "desc_chars": 996,
+      "desc_words": 155,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "openrouter": {
+    "label": "OpenRouter (Laguna 2.1 Free)",
+    "status": "success",
+    "latency_s": 7.91,
+    "model_used": "OpenRouter (poolside/laguna-s-2.1:free)",
+    "title": "Build a Production-Grade Autonomous AI Agent with Next.js 16, FastAPI, and Local LLMs",
+    "description": "Ready to build a real, production-ready Autonomous AI Agent from scratch? In this hands-on tutorial, we're wiring together a powerful stack: Next.js 16 for the frontend, FastAPI in Python for the backend, and local open-source LLMs running through llama.cpp for blazing-fast, private inference. No cloud APIs, no fluff-just clean, deployable code. You'll learn how to structure a multi-agent system, manage state between turns, and serve local models efficiently. We'll cover key components like agent memory, tool calling, and API routing. Whether you're building a coding assistant, research bot, or automation tool, this setup gives you full control. Grab the code, follow along, and build something incredible. Hit play, and let's get started! If you have been following the rapid evolution of generative AI in 2026, you know that relying solely on closed APIs like GPT-4 or Claude has serious drawbacks: rate limits, soaring API bills, vendor lock-in, and privacy concerns when handling proprietary user data.",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 90.2,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 97.8,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "python",
+        "next.js",
+        "autonomous",
+        "llama.cpp",
+        "ai agent",
+        "fastapi",
+        "llm"
+      ],
+      "title_chars": 85,
+      "title_words": 13,
+      "title_valid": true,
+      "desc_chars": 1014,
+      "desc_words": 155,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "mistral": {
+    "label": "Local Custom Mistral 7B (GGUF)",
+    "status": "success",
+    "latency_s": 27.74,
+    "model_used": "Mistral 7B (Custom HF)",
+    "title": "Rate Limits with Local Like: Practical Walkthrough",
+    "description": "Unlock the secrets of rate limits in this deep dive into local like. We're breaking down how to master like models to elevate your results. We move beyond the basics to give you actionable insights you can apply immediately. Key Takeaways: \u2022 If you have been following the rapid evolution of generative AI in 2026, you know that relying solely on closed APIs like GPT-4 or Claude has. \u2022 In this comprehensive masterclass, I will show you how to architect a hybrid AI infrastructure that combines lightning-fast cloud LPUs with quantized local Small Language Models. \u2022 Here is the exact architectural breakdown we are covering: First, we set up our Next.js 16 App Router frontend with real-time Server-Sent Events (SSE) streaming, reactive. Apply these rate limits and local like steps on your next upload, then subscribe for more script-based breakdowns. By understanding the relationship between rate limits and local like, you'll be able to create content that resonates more deeply with your audience.",
+    "tags": [
+      "rate limits",
+      "local like",
+      "like models",
+      "models system",
+      "system fastapi",
+      "fastapi python",
+      "python source",
+      "source running",
+      "running llama",
+      "llama rate",
+      "limits user"
+    ],
+    "seo_score": 91.0,
+    "seo_breakdown": {
+      "title": 100.0,
+      "description": 100.0,
+      "tags": 100.0,
+      "keyword_relevance": 10.0,
+      "readability": 100.0
+    },
+    "metrics": {
+      "relevance_score": 12.5,
+      "key_terms_covered": [
+        "next.js"
+      ],
+      "title_chars": 50,
+      "title_words": 7,
+      "title_valid": true,
+      "desc_chars": 1004,
+      "desc_words": 163,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  },
+  "gemini_native": {
+    "label": "Google Gemini 3.8 Flash (Direct)",
+    "status": "success",
+    "latency_s": 14.37,
+    "model_used": "Google Gemini 3.8 Flash",
+    "title": "Create Autonomous AI Agents Using Next.js 16 and FastAPI",
+    "description": "Stop relying on expensive cloud APIs and learn how to build a production-grade Autonomous AI Agent system completely from scratch! In this in-depth guide, we show you how to combine Next.js 16 with FastAPI in Python and run local LLMs using llama.cpp. By setting up a robust hybrid AI architecture, you can enjoy the ultra-low latency of cloud LPUs while having private, local small language models as a reliable fallback. We cover everything from reactive telemetry and Server-Sent Events to deterministic constraint repair algorithms and QLoRA fine-tuning on Google Colab. Discover how to convert LoRA adapters into GGUF Q4_K_M binaries and rank your YouTube metadata right at the very top of search feeds. Grab the complete source code from the repository linked below, hit subscribe, and let us know your thoughts in the comments!",
+    "seo_score": 91.0,
+    "metrics": {
+      "relevance_score": 87.5,
+      "key_terms_covered": [
+        "autonomous",
+        "next.js",
+        "llm",
+        "python",
+        "ai agent",
+        "llama.cpp",
+        "fastapi"
+      ],
+      "title_chars": 56,
+      "title_words": 9,
+      "title_valid": true,
+      "desc_chars": 1017,
+      "desc_words": 157,
+      "desc_valid": true,
+      "tag_count": 11,
+      "tags_valid": true,
+      "all_bounds_pass": true
+    }
+  }
+}

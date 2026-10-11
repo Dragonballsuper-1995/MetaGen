@@ -6,7 +6,7 @@ from download_model import download, MODEL_CATALOG
 
 
 def _background_download():
-    preload_var = os.environ.get("PRELOAD_MODELS", "mistral-7b,phi-4-mini")
+    preload_var = os.environ.get("PRELOAD_MODELS", "llama-3.2-1b,qwen-2.5-1.5b")
     model_keys = [k.strip() for k in preload_var.split(",") if k.strip()]
     for key in model_keys:
         if key == "all":

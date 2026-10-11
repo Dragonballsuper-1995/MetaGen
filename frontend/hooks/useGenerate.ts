@@ -9,6 +9,10 @@ interface UseGenerateOptions {
   onPollUnavailable?: (text: string, reason: string) => void;
 }
 
+/**
+ * @deprecated Legacy polling generation hook using Celery background tasks.
+ * MetaGen v2 uses real-time Server-Sent Events (SSE) via `useStreamGenerate`.
+ */
 export function useGenerate(options: UseGenerateOptions = {}) {
   const { onPollUnavailable } = options;
   const [status, setStatus] = useState<GenerationStatus>("idle");

@@ -13,6 +13,10 @@ const WARMUP_FALLBACK: WarmupHealthResponse = {
   error: "Warmup status unavailable",
 };
 
+/**
+ * @deprecated Legacy health and warmup polling hook.
+ * Live telemetry and health checks are now managed via `diagnostics.ts` and `telemetry-ribbon.tsx`.
+ */
 export function useWarmupAndDepsHealth(mode: GenerationMode) {
   const [pollReady, setPollReady] = useState<boolean | null>(null);
   const [warmupHealth, setWarmupHealth] = useState<WarmupHealthResponse | null>(null);

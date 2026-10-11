@@ -4,7 +4,7 @@ export const POLL_INTERVAL = 1500; // ms
 
 let _resolvedApiUrl: string | null = null;
 
-async function probe(url: string): Promise<boolean> {
+async function probe(url: string, timeoutMs: number = 8000): Promise<boolean> {
   // Prevent browser mixed-content errors if running on HTTPS
   if (
     typeof window !== "undefined" &&
@@ -14,18 +14,25 @@ async function probe(url: string): Promise<boolean> {
     return false;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(new URL("/health", url).toString(), {
-      method: "GET",
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return res.ok;
-  } catch {
-    return false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(new URL("/health", url).toString(), {
+        method: "GET",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) return true;
+    } catch {
+      if (attempt === 0 && url.includes("hf.space")) {
+        await new Promise((r) => setTimeout(r, 1000));
+        continue;
+      }
+      return false;
+    }
   }
+  return false;
 }
 
 export async function resolveApiUrl(): Promise<string> {

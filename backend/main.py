@@ -98,13 +98,13 @@ def _probe_dependency_health_sync() -> dict[str, Any]:
     }
 
 
-async def _ensure_model_warm(target_app: FastAPI) -> None:
+async def _ensure_model_warm(target_app: FastAPI, model_choice: str | None = None) -> None:
     """Compatibility shim: original tests patch `main._ensure_model_warm`.
 
     Delegate to the extracted runtime helper while keeping the old
     symbol available for tests and backwards compatibility.
     """
-    await ensure_model_warm_ready(target_app, logger)
+    await ensure_model_warm_ready(target_app, logger, model_choice=model_choice)
 
 
 @asynccontextmanager
@@ -150,7 +150,7 @@ async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -188,9 +188,9 @@ class TelemetryData(BaseModel):
 
 
 class MetadataResult(BaseModel):
-    title: str = Field(..., min_length=40, max_length=60)
-    description: str = Field(..., min_length=800, max_length=1300)
-    tags: list[str] = Field(..., min_length=5, max_length=8)
+    title: str = Field(..., min_length=20, max_length=100)
+    description: str = Field(..., min_length=250, max_length=2500)
+    tags: list[str] = Field(..., min_length=3, max_length=25)
     seo_score: float | None = Field(default=None, ge=0, le=100)
     seo_breakdown: SeoBreakdown | None = None
     model: str | None = Field(default=None, description="Active AI model used for generation")
@@ -201,10 +201,10 @@ class MetadataResult(BaseModel):
     def _validate_tags(cls, value: list[str]) -> list[str]:
         for tag in value:
             words = len(tag.split())
-            if words < 2 or words > 4:
-                raise ValueError("Each tag must contain 2-4 words")
-            if len(tag) > 30:
-                raise ValueError("Each tag must be at most 30 characters")
+            if words < 1 or words > 6:
+                raise ValueError("Each tag must contain 1-6 words")
+            if len(tag) > 40:
+                raise ValueError("Each tag must be at most 40 characters")
         return value
 
 
@@ -516,7 +516,7 @@ async def stream_generation(request: Request, req: VideoRequest):
         or _get_openrouter_client()
     )
     if normalized.startswith("local") or normalized == "mistral" or not has_cloud:
-        await _ensure_model_warm(app)
+        await _ensure_model_warm(app, model_choice=normalized)
 
     async def event_generator():
         from backend.ai_engine import ScriptValidationError, generate_youtube_metadata_stream
@@ -567,8 +567,8 @@ async def generate_title_variants(request: Request, req: TitleVariantsRequest):
 
     try:
         normalized = _normalize_model_choice(req.model)
-        if normalized == "mistral" or not _get_groq_client():
-            await _ensure_model_warm(app)
+        if normalized.startswith("local") or normalized == "mistral" or not _get_groq_client():
+            await _ensure_model_warm(app, model_choice=normalized)
         titles = build_title_variants(req.text, req.base_title, req.count, model_choice=req.model)
         return TitleVariantsResponse(titles=titles)
     except ScriptValidationError as exc:

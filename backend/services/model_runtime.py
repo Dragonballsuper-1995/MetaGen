@@ -16,13 +16,13 @@ def _utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _load_model_for_warmup() -> None:
+def _load_model_for_warmup(force: bool = False, model_choice: str | None = None) -> None:
     from backend.ai_engine import _get_groq_client, get_llm
 
-    if _get_groq_client() is not None:
+    if not force and model_choice is None and _get_groq_client() is not None:
         return
 
-    get_llm()
+    get_llm(model_choice or "mistral")
 
 
 def initialize_model_runtime_state(
@@ -99,8 +99,12 @@ async def run_keep_warm_heartbeat(target_app: FastAPI, logger) -> None:
         raise
 
 
-async def ensure_model_warm_ready(target_app: FastAPI, logger) -> None:
-    if target_app.state.model_warm_ready:
+async def ensure_model_warm_ready(
+    target_app: FastAPI,
+    logger,
+    model_choice: str | None = None,
+) -> None:
+    if target_app.state.model_warm_ready and model_choice is None:
         return
 
     lock = getattr(target_app.state, "model_warm_lock", None)
@@ -109,7 +113,7 @@ async def ensure_model_warm_ready(target_app: FastAPI, logger) -> None:
         target_app.state.model_warm_lock = lock
 
     async with lock:
-        if target_app.state.model_warm_ready:
+        if target_app.state.model_warm_ready and model_choice is None:
             return
 
         target_app.state.model_warm_last_attempt_utc = _utc_now_iso()
@@ -120,13 +124,16 @@ async def ensure_model_warm_ready(target_app: FastAPI, logger) -> None:
         timeout_s = float(getattr(target_app.state, "model_warm_timeout_s", MODEL_WARM_GATE_TIMEOUT_S))
 
         try:
-            await asyncio.wait_for(asyncio.to_thread(_load_model_for_warmup), timeout=timeout_s)
+            await asyncio.wait_for(
+                asyncio.to_thread(_load_model_for_warmup, True, model_choice),
+                timeout=timeout_s,
+            )
             warm_elapsed = perf_counter() - warm_start
             target_app.state.model_warm_ready = True
             target_app.state.model_warm_error = None
             target_app.state.model_warm_duration_s = round(warm_elapsed, 3)
             target_app.state.model_warm_completed_utc = _utc_now_iso()
-            logger.info("Model warm gate completed in %.2fs", warm_elapsed)
+            logger.info("Model warm gate completed in %.2fs (model=%s)", warm_elapsed, model_choice or "mistral")
         except TimeoutError as exc:
             warm_elapsed = perf_counter() - warm_start
             target_app.state.model_warm_ready = False

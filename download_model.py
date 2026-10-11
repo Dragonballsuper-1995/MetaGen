@@ -40,6 +40,20 @@ MODEL_CATALOG = {
         "description": "Microsoft Phi-4 Mini 3.8B optimized for lightweight CPU inference.",
         "size_mb": 2400,
     },
+    "qwen-2.5-1.5b": {
+        "repo_id": "SujalChhajed925/yt-seo-qwen2.5-1.5b-merged",
+        "filename": "custom-qwen2.5-1.5b-yt-seo-Q4_K_M.gguf",
+        "display_name": "Qwen 2.5 1.5B Q4_K_M (Custom HF)",
+        "description": "Ultra-fast Alibaba Qwen 2.5 1.5B fine-tuned SLM (<1.1GB, ~35 tok/s CPU).",
+        "size_mb": 1050,
+    },
+    "llama-3.2-1b": {
+        "repo_id": "SujalChhajed925/yt-seo-llama3.2-1b-merged",
+        "filename": "custom-llama3.2-1b-yt-seo-Q4_K_M.gguf",
+        "display_name": "Llama 3.2 1B Q4_K_M (Custom HF)",
+        "description": "Ultra-lightweight Meta Llama 3.2 1B fine-tuned hook generator (~750MB, ~40 tok/s CPU).",
+        "size_mb": 750,
+    },
 }
 
 
@@ -80,11 +94,21 @@ def download(model_key: str = "mistral-7b") -> str | None:
 
     print(f"[+] Downloading {info['filename']} from {info['repo_id']}...")
     os.makedirs(LOCAL_DIR, exist_ok=True)
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend", ".env"))
+            token = os.environ.get("HF_TOKEN")
+        except Exception:
+            pass
+
     try:
         path = hf_hub_download(
             repo_id=info["repo_id"],
             filename=info["filename"],
-            local_dir=LOCAL_DIR
+            local_dir=LOCAL_DIR,
+            token=token,
         )
         print(f"[+] Model downloaded to: {path}")
         return path

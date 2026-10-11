@@ -88,6 +88,20 @@ def _utc_timestamp() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _is_provider_outage_error(e: Exception) -> bool:
+    """Return True if exception indicates platform-level downtime, connection failure, or timeout."""
+    status_code = getattr(e, "status_code", None)
+    if status_code and status_code in (500, 502, 503, 504):
+        return True
+    err_type = type(e).__name__
+    if any(term in err_type for term in ("Timeout", "Connection", "ConnectError", "ConnectTimeout", "InternalServerError")):
+        return True
+    err_str = str(e).lower()
+    if any(phrase in err_str for phrase in ("connection refused", "timed out", "timeout", "503", "502", "service unavailable", "bad gateway")):
+        return True
+    return False
+
+
 def _get_groq_client():
     global _groq_client
     if _groq_client is not None:
@@ -99,10 +113,11 @@ def _get_groq_client():
         or os.environ.get("GROQ_API_KEY", "").strip()
         or os.environ.get("GROQ_KEY", "").strip()
     )
+    timeout_s = getattr(settings, "cloud_tier_timeout_s", 3.5)
     if Groq and groq_key:
         try:
-            _groq_client = Groq(api_key=groq_key)
-            logger.info("Groq client initialized for lightning-fast inference.")
+            _groq_client = Groq(api_key=groq_key, timeout=timeout_s)
+            logger.info("Groq client initialized for lightning-fast inference (timeout=%.1fs).", timeout_s)
             return _groq_client
         except Exception as e:
             logger.error(f"Failed to initialize Groq client: {e}")
@@ -119,10 +134,13 @@ def _get_gemini_client():
         (getattr(settings, "gemini_api_key", None) or "").strip()
         or os.environ.get("GEMINI_API_KEY", "").strip()
     )
+    # Google GenAI requires a minimum deadline of 10s (10000ms); set to 25s for complete JSON streaming
+    timeout_ms = max(int(getattr(settings, "cloud_tier_timeout_s", 3.5) * 1000), 25000)
     if genai and gemini_key:
         try:
-            _gemini_client = genai.Client(api_key=gemini_key)
-            logger.info("Google Gemini client initialized.")
+            http_opts = genai_types.HttpOptions(timeout=timeout_ms) if genai_types and hasattr(genai_types, "HttpOptions") else None
+            _gemini_client = genai.Client(api_key=gemini_key, http_options=http_opts) if http_opts else genai.Client(api_key=gemini_key)
+            logger.info("Google Gemini client initialized (timeout=%dms).", timeout_ms)
             return _gemini_client
         except Exception as e:
             logger.error(f"Failed to initialize Gemini client: {e}")
@@ -144,10 +162,11 @@ def _get_opencode_zen_client():
         or os.environ.get("OPENCODE_ZEN_BASE_URL", "").strip()
         or "https://opencode.ai/zen/v1"
     )
+    timeout_s = getattr(settings, "cloud_tier_timeout_s", 3.5)
     if OpenAI and zen_key:
         try:
-            _opencode_zen_client = OpenAI(base_url=base_url, api_key=zen_key, timeout=12.0)
-            logger.info("OpenCode Zen client initialized.")
+            _opencode_zen_client = OpenAI(base_url=base_url, api_key=zen_key, timeout=timeout_s)
+            logger.info("OpenCode Zen client initialized (timeout=%.1fs).", timeout_s)
             return _opencode_zen_client
         except Exception as e:
             logger.error(f"Failed to initialize OpenCode Zen client: {e}")
@@ -169,6 +188,7 @@ def _get_openrouter_client():
         or os.environ.get("OPENROUTER_BASE_URL", "").strip()
         or "https://openrouter.ai/api/v1"
     )
+    timeout_s = getattr(settings, "cloud_tier_timeout_s", 3.5)
     if OpenAI and router_key:
         try:
             _openrouter_client = OpenAI(
@@ -178,9 +198,9 @@ def _get_openrouter_client():
                     "HTTP-Referer": "https://metagen-one.vercel.app",
                     "X-Title": "MetaGen",
                 },
-                timeout=15.0,
+                timeout=timeout_s,
             )
-            logger.info("OpenRouter client initialized.")
+            logger.info("OpenRouter client initialized (timeout=%.1fs).", timeout_s)
             return _openrouter_client
         except Exception as e:
             logger.error(f"Failed to initialize OpenRouter client: {e}")
@@ -552,6 +572,10 @@ _MODEL_CHOICE_TO_CATALOG_KEY = {
     "qwen-2.5-7b": "qwen-2.5-7b",
     "local-phi4": "phi-4-mini",
     "phi-4-mini": "phi-4-mini",
+    "local-qwen1.5b": "qwen-2.5-1.5b",
+    "qwen-2.5-1.5b": "qwen-2.5-1.5b",
+    "local-llama1b": "llama-3.2-1b",
+    "llama-3.2-1b": "llama-3.2-1b",
 }
 
 _MODEL_CHAT_FORMATS = {
@@ -563,6 +587,10 @@ _MODEL_CHAT_FORMATS = {
     "qwen-2.5-7b": "chatml",
     "local-phi4": "chatml",
     "phi-4-mini": "chatml",
+    "local-qwen1.5b": "chatml",
+    "qwen-2.5-1.5b": "chatml",
+    "local-llama1b": "llama-3",
+    "llama-3.2-1b": "llama-3",
 }
 
 _current_local_model_choice: str | None = None
@@ -620,11 +648,24 @@ def get_llm(model_choice: str = "mistral") -> Any:
             break
 
     # Fallback to settings.model_path if candidate not found
+    actual_choice = normalized
     if not model_path or not os.path.exists(model_path):
         if os.path.exists(settings.model_path):
             model_path = settings.model_path
+            actual_choice = "mistral"
+            logger.warning(
+                "Requested local model '%s' not found on disk. Falling back to default model '%s'",
+                normalized,
+                model_path,
+            )
         elif os.path.exists(os.path.join("backend", "model", settings.model_path)):
             model_path = os.path.join("backend", "model", settings.model_path)
+            actual_choice = "mistral"
+            logger.warning(
+                "Requested local model '%s' not found on disk. Falling back to default model '%s'",
+                normalized,
+                model_path,
+            )
         else:
             raise RuntimeError(
                 f"Local model '{normalized}' ({target_filename}) is not found locally. "
@@ -632,12 +673,13 @@ def get_llm(model_choice: str = "mistral") -> Any:
             )
 
     threads = max(1, multiprocessing.cpu_count() - 2)
-    chat_format = _MODEL_CHAT_FORMATS.get(normalized, "mistral-instruct")
+    chat_format = _MODEL_CHAT_FORMATS.get(actual_choice, "mistral-instruct")
 
     logger.info(
-        "Loading GGUF model '%s' (choice=%s, format=%s, threads=%d, gpu_layers=%d, batch=%d)",
+        "Loading GGUF model '%s' (choice=%s, actual=%s, format=%s, threads=%d, gpu_layers=%d, batch=%d)",
         model_path,
         normalized,
+        actual_choice,
         chat_format,
         threads,
         settings.gpu_layers,
@@ -1794,15 +1836,15 @@ def _extract_json_fields_fallback(text: str) -> dict[str, Any] | None:
 
     extracted: dict[str, Any] = {}
 
-    title_match = re.search(r'"title"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.IGNORECASE | re.DOTALL)
+    title_match = re.search(r'"title(?:\s*\(\d+\))?"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.IGNORECASE | re.DOTALL)
     if title_match:
         extracted["title"] = title_match.group(1).encode("utf-8", "ignore").decode("unicode_escape")
 
-    desc_match = re.search(r'"description"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.IGNORECASE | re.DOTALL)
+    desc_match = re.search(r'"description(?:\s*\(\d+\))?"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.IGNORECASE | re.DOTALL)
     if desc_match:
         extracted["description"] = desc_match.group(1).encode("utf-8", "ignore").decode("unicode_escape")
 
-    tags_match = re.search(r'"tags"\s*:\s*\[(.*?)\]', text, re.IGNORECASE | re.DOTALL)
+    tags_match = re.search(r'"tags(?:\s*\(\d+\))?"\s*:\s*\[(.*?)\]', text, re.IGNORECASE | re.DOTALL)
     if tags_match:
         tags_blob = tags_match.group(1)
         tag_items = re.findall(r'"((?:[^"\\]|\\.)*)"', tags_blob)
@@ -1835,6 +1877,10 @@ def _parse_json_safe(text: str) -> dict:
     if cleaned_text.startswith("```"):
         cleaned_text = re.sub(r"^```(?:json)?", "", cleaned_text, flags=re.IGNORECASE).strip()
         cleaned_text = re.sub(r"```$", "", cleaned_text).strip()
+
+    # Strip inline token index markers that models like Gemini occasionally emit
+    cleaned_text = re.sub(r'\(\s*\d+\s*\)', '', cleaned_text)
+    cleaned_text = re.sub(r'"([a-zA-Z_]+)\(\d+\)"\s*:', r'"\1":', cleaned_text)
 
     # 1. Happy path
     try:
@@ -1941,7 +1987,7 @@ _last_used_model_name: str = "OpenAI GPT-OSS 120B (Groq)"
 _MODEL_DISPLAY_NAMES = {
     "openai/gpt-oss-120b": "OpenAI GPT-OSS 120B (Groq)",
     "openai/gpt-oss-20b": "OpenAI GPT-OSS 20B (Groq)",
-    "qwen/qwen3.6-27b": "Qwen 3.6 27B (Groq)",
+    "qwen/qwen3.8-27b": "Qwen 3.8 27B (Groq)",
     "gemini": "Gemini 3.6 Flash (Google)",
     "gemini-3.6-flash": "Gemini 3.6 Flash (Google)",
     "gemini-3.7-flash": "Gemini 3.7 Flash (Google)",
@@ -1961,6 +2007,10 @@ _MODEL_DISPLAY_NAMES = {
     "qwen-2.5-7b": "Qwen 2.5 7B (Custom HF)",
     "local-phi4": "Phi-4 Mini 3.8B (Custom HF)",
     "phi-4-mini": "Phi-4 Mini 3.8B (Custom HF)",
+    "local-qwen1.5b": "Qwen 2.5 1.5B (Custom HF)",
+    "qwen-2.5-1.5b": "Qwen 2.5 1.5B (Custom HF)",
+    "local-llama1b": "Llama 3.2 1B (Custom HF)",
+    "llama-3.2-1b": "Llama 3.2 1B (Custom HF)",
 }
 
 
@@ -1982,11 +2032,15 @@ def _normalize_model_choice(model_choice: str | None) -> str:
         return "local-qwen"
     if choice in ("phi", "phi4", "phi-4", "phi-4-mini", "local-phi4", "local-phi", "phi-4-3.8b"):
         return "local-phi4"
+    if choice in ("local-qwen1.5b", "qwen-1.5b", "qwen1.5b", "qwen-2.5-1.5b", "local-qwen-1.5b"):
+        return "local-qwen1.5b"
+    if choice in ("local-llama1b", "llama-1b", "llama1b", "llama-3.2-1b", "local-llama-1b", "llama3.2-1b"):
+        return "local-llama1b"
     if choice in ("groq-120b", "openai/gpt-oss-120b", "120b", "groq", "cloud"):
         return "groq-120b"
     if choice in ("groq-20b", "openai/gpt-oss-20b", "20b"):
         return "groq-20b"
-    if choice in ("qwen-27b", "qwen", "qwen3.6-27b"):
+    if choice in ("qwen-27b", "qwen", "qwen3.8-27b", "qwen3.6-27b"):
         return "qwen-27b"
     if choice in ("gemini", "google", "gemini-flash", "gemini-3.6-flash", "gemini-3.7-flash"):
         return "gemini"
@@ -2005,7 +2059,7 @@ def _get_groq_candidate_models(normalized_choice: str) -> list[str]:
     if normalized_choice == "groq-20b":
         return ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
     if normalized_choice == "qwen-27b":
-        return ["qwen/qwen3.6-27b"]
+        return ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b"]
 
     # "auto" mode: build multi-tier fallback chain
     candidates: list[str] = []
@@ -2030,12 +2084,12 @@ def _get_groq_candidate_models(normalized_choice: str) -> list[str]:
 def _get_gemini_candidate_models(normalized_choice: str = "auto") -> list[str]:
     """Return candidate model list for Google Gemini."""
     settings = _get_settings()
-    primary = settings.gemini_model or "gemini-3.6-flash"
+    primary = settings.gemini_model or "gemini-3.8-flash"
     candidates = [primary]
     fallback_models = getattr(
         settings,
         "gemini_fallback_models",
-        ["gemini-3.7-flash", "gemini-3.6-flash"],
+        ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-flash-latest"],
     )
     if isinstance(fallback_models, str):
         fallback_models = [m.strip() for m in fallback_models.split(",") if m.strip()]
@@ -2412,7 +2466,7 @@ def _llm_call(
     normalized_choice = _normalize_model_choice(model_choice)
 
     # 1. Explicit provider selections
-    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4"):
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b"):
         try:
             llm = get_llm(normalized_choice)
             inference_start = perf_counter()
@@ -2459,6 +2513,7 @@ def _llm_call(
                             "max_tokens": groq_max_tokens,
                             "temperature": settings.temperature if temperature is None else temperature,
                             "top_p": settings.top_p,
+                            "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                         }
                         if "gpt-oss" in model_id.lower():
                             groq_params["response_format"] = {"type": "json_object"}
@@ -2471,6 +2526,9 @@ def _llm_call(
                         return _parse_json_safe(result_text)
                     except Exception as e:
                         logger.warning("Groq fallback failed: %s", e)
+                        if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                            logger.warning("Groq platform outage detected (%s). Skipping remaining Groq models.", e)
+                            break
             if _get_gemini_client() is not None:
                 try:
                     res = _call_gemini_llm(system_prompt, user_msg, max_tokens, temperature)
@@ -2521,6 +2579,7 @@ def _llm_call(
                     "max_tokens": groq_max_tokens,
                     "temperature": settings.temperature if temperature is None else temperature,
                     "top_p": settings.top_p,
+                    "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                 }
                 if "gpt-oss" in model_id.lower():
                     groq_params["response_format"] = {"type": "json_object"}
@@ -2533,6 +2592,9 @@ def _llm_call(
                 return _parse_json_safe(result_text)
             except Exception as e:
                 logger.warning("Groq model %s failed: %s", model_id, e)
+                if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                    logger.warning("Groq platform outage detected (%s). Skipping remaining Groq models.", e)
+                    break
         raise RuntimeError(f"Groq generation failed for requested choice '{model_choice}'")
 
     elif normalized_choice == "auto":
@@ -2542,7 +2604,7 @@ def _llm_call(
         # Tier 2: Google Gemini (Generous Free)
         # Tier 3: OpenCode Zen (Free Cloud Gateway)
         # Tier 4: OpenRouter (Free Open-Source Gateway)
-        # Tier 5: Local CPU / GPU (Mistral GGUF)
+        # Tier 5: Local CPU / GPU (Mistral / SLM GGUF)
         # -------------------------------------------------------------
 
         # Tier 1: Groq
@@ -2568,6 +2630,7 @@ def _llm_call(
                         "max_tokens": groq_max_tokens,
                         "temperature": settings.temperature if temperature is None else temperature,
                         "top_p": settings.top_p,
+                        "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                     }
                     if "gpt-oss" in model_id.lower():
                         groq_params["response_format"] = {"type": "json_object"}
@@ -2580,6 +2643,9 @@ def _llm_call(
                     return _parse_json_safe(result_text)
                 except Exception as e:
                     logger.warning("Groq model %s failed in auto cascade: %s", model_id, e)
+                    if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                        logger.warning("Groq platform outage detected in auto cascade (%s). Skipping remaining Groq candidates.", e)
+                        break
 
         # Tier 2: Google Gemini
         if _get_gemini_client() is not None:
@@ -2604,8 +2670,21 @@ def _llm_call(
 
         logger.warning("All cloud providers in cascade failed or unconfigured; falling back to local model.")
 
-    # Fallback / Tier 5: Local model (Custom Mistral 7B)
-    llm = get_llm("mistral")
+    # Fallback / Tier 5: Local model (prefer lightweight SLM if available on disk)
+    fallback_choice = "mistral"
+    try:
+        from download_model import MODEL_CATALOG
+        for slm_candidate in ("local-qwen1.5b", "local-llama1b", "local-phi4"):
+            slm_key = _MODEL_CHOICE_TO_CATALOG_KEY.get(slm_candidate)
+            if slm_key and slm_key in MODEL_CATALOG:
+                fname = MODEL_CATALOG[slm_key]["filename"]
+                if os.path.exists(os.path.join("backend", "model", fname)) or os.path.exists(fname):
+                    fallback_choice = slm_candidate
+                    break
+    except Exception:
+        pass
+
+    llm = get_llm(fallback_choice)
     inference_start = perf_counter()
     response = llm.create_chat_completion(
         messages=[
@@ -2620,8 +2699,8 @@ def _llm_call(
     )
     elapsed = perf_counter() - inference_start
     result_text = response["choices"][0]["message"]["content"].strip()
-    _last_used_model_name = _human_model_name("mistral")
-    logger.info("Local LLM call completed in %.2fs", elapsed)
+    _last_used_model_name = _human_model_name(fallback_choice)
+    logger.info("Local LLM call completed in %.2fs (model=%s)", elapsed, fallback_choice)
     return _parse_json_safe(result_text)
 
 
@@ -2637,7 +2716,7 @@ def _llm_stream(
     normalized_choice = _normalize_model_choice(model_choice)
 
     # 1. Explicit provider selections
-    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4"):
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b"):
         try:
             llm = get_llm(normalized_choice)
             start = perf_counter()
@@ -2713,6 +2792,7 @@ def _llm_stream(
                             "temperature": settings.temperature,
                             "top_p": settings.top_p,
                             "stream": True,
+                            "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                         }
                         if "gpt-oss" in model_id.lower():
                             groq_params["response_format"] = {"type": "json_object"}
@@ -2736,6 +2816,9 @@ def _llm_stream(
                             return
                     except Exception as e:
                         logger.warning("Groq fallback stream failed: %s", e)
+                        if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                            logger.warning("Groq platform outage detected (%s). Skipping remaining Groq models.", e)
+                            break
             if _get_gemini_client() is not None:
                 try:
                     for chunk in _stream_gemini_llm(system_prompt, user_msg, max_tokens):
@@ -2751,21 +2834,30 @@ def _llm_stream(
             yield from _stream_gemini_llm(system_prompt, user_msg, max_tokens)
             return
         except Exception as e:
-            logger.error("Explicit Gemini streaming failed: %s", e)
+            logger.warning("Explicit Gemini streaming failed (%s); attempting cloud fallback cascade", e)
+            if _get_groq_client() is not None:
+                yield from _llm_stream(system_prompt, user_msg, max_tokens, model_choice="auto")
+                return
             raise RuntimeError(f"Gemini streaming failed: {e}") from e
     elif normalized_choice == "opencode-zen":
         try:
             yield from _stream_opencode_zen_llm(system_prompt, user_msg, max_tokens)
             return
         except Exception as e:
-            logger.error("Explicit OpenCode Zen streaming failed: %s", e)
+            logger.warning("Explicit OpenCode Zen streaming failed (%s); attempting cloud fallback cascade", e)
+            if _get_groq_client() is not None or _get_gemini_client() is not None:
+                yield from _llm_stream(system_prompt, user_msg, max_tokens, model_choice="auto")
+                return
             raise RuntimeError(f"OpenCode Zen streaming failed: {e}") from e
     elif normalized_choice == "openrouter":
         try:
             yield from _stream_openrouter_llm(system_prompt, user_msg, max_tokens)
             return
         except Exception as e:
-            logger.error("Explicit OpenRouter streaming failed: %s", e)
+            logger.warning("Explicit OpenRouter streaming failed (%s); attempting cloud fallback cascade", e)
+            if _get_groq_client() is not None or _get_gemini_client() is not None:
+                yield from _llm_stream(system_prompt, user_msg, max_tokens, model_choice="auto")
+                return
             raise RuntimeError(f"OpenRouter streaming failed: {e}") from e
     elif normalized_choice in ("groq-120b", "groq-20b", "qwen-27b"):
         groq = _get_groq_client()
@@ -2793,6 +2885,7 @@ def _llm_stream(
                     "temperature": settings.temperature,
                     "top_p": settings.top_p,
                     "stream": True,
+                    "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                 }
                 if "gpt-oss" in model_id.lower():
                     groq_params["response_format"] = {"type": "json_object"}
@@ -2833,6 +2926,9 @@ def _llm_stream(
                     return
             except Exception as e:
                 logger.warning("Groq streaming for model %s failed: %s", model_id, e)
+                if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                    logger.warning("Groq platform outage detected (%s). Skipping remaining Groq models.", e)
+                    break
         raise RuntimeError(f"Groq streaming failed for requested choice '{model_choice}'")
 
     elif normalized_choice == "auto":
@@ -2842,7 +2938,7 @@ def _llm_stream(
         # Tier 2: Google Gemini (Generous Free)
         # Tier 3: OpenCode Zen (Free Cloud Gateway)
         # Tier 4: OpenRouter (Free Open-Source Gateway)
-        # Tier 5: Local CPU / GPU (Mistral GGUF)
+        # Tier 5: Local CPU / GPU (Mistral / SLM GGUF)
         # -------------------------------------------------------------
 
         # Tier 1: Groq
@@ -2870,6 +2966,7 @@ def _llm_stream(
                         "temperature": settings.temperature,
                         "top_p": settings.top_p,
                         "stream": True,
+                        "timeout": getattr(settings, "cloud_tier_timeout_s", 3.5),
                     }
                     if "gpt-oss" in model_id.lower():
                         groq_params["response_format"] = {"type": "json_object"}
@@ -2910,6 +3007,9 @@ def _llm_stream(
                         return
                 except Exception as e:
                     logger.warning("Groq stream for model %s failed in auto cascade: %s", model_id, e)
+                    if getattr(settings, "fast_outage_skip_enabled", True) and _is_provider_outage_error(e):
+                        logger.warning("Groq platform outage detected in auto cascade (%s). Skipping remaining Groq candidates.", e)
+                        break
 
         # Tier 2: Gemini
         if _get_gemini_client() is not None:
@@ -2955,8 +3055,21 @@ def _llm_stream(
 
         logger.warning("All cloud streaming providers failed; falling back to local model.")
 
-    # Tier 5: Local model fallback
-    llm = get_llm("mistral")
+    # Tier 5: Local model fallback (prefer lightweight SLM if available on disk)
+    fallback_choice = "mistral"
+    try:
+        from download_model import MODEL_CATALOG
+        for slm_candidate in ("local-qwen1.5b", "local-llama1b", "local-phi4"):
+            slm_key = _MODEL_CHOICE_TO_CATALOG_KEY.get(slm_candidate)
+            if slm_key and slm_key in MODEL_CATALOG:
+                fname = MODEL_CATALOG[slm_key]["filename"]
+                if os.path.exists(os.path.join("backend", "model", fname)) or os.path.exists(fname):
+                    fallback_choice = slm_candidate
+                    break
+    except Exception:
+        pass
+
+    llm = get_llm(fallback_choice)
     start = perf_counter()
     token_count = 0
     response = llm.create_chat_completion(
@@ -2977,12 +3090,13 @@ def _llm_stream(
         if content:
             token_count = 1
             yield content
-        _last_used_model_name = _human_model_name("mistral")
+        _last_used_model_name = _human_model_name(fallback_choice)
         logger.info(
-            "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d)",
+            "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d, model=%s)",
             perf_counter() - start,
             token_count,
             max_tokens,
+            fallback_choice,
         )
         _log_gpu_status()
         return
@@ -2994,12 +3108,13 @@ def _llm_stream(
             token_count += 1
             yield token
 
-    _last_used_model_name = _human_model_name("mistral")
+    _last_used_model_name = _human_model_name(fallback_choice)
     logger.info(
-        "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d)",
+        "Local LLM stream completed in %.2fs (%d chunks, max_tokens=%d, model=%s)",
         perf_counter() - start,
         token_count,
         max_tokens,
+        fallback_choice,
     )
     _log_gpu_status()
 
@@ -4011,6 +4126,7 @@ def generate_title_variants(
     """
     request_start = perf_counter()
     requested_count = max(1, min(count, 5))
+    settings = _get_settings()
 
     try:
         cleaned_script = validate_script(script_text)
@@ -4095,8 +4211,8 @@ def generate_title_variants(
             continue
 
         llm_attempt_s.append(perf_counter() - llm_call_start)
-        attempt_titles = parsed.get("titles", []) if isinstance(parsed, dict) else []
-        if isinstance(attempt_titles, list) and attempt_titles:
+        attempt_titles = _extract_variant_candidates(parsed) if isinstance(parsed, dict) else []
+        if attempt_titles:
             raw_titles = [str(item) for item in attempt_titles]
             llm_success_attempt = attempt
             break
@@ -4113,35 +4229,30 @@ def generate_title_variants(
         target_count=_target_tag_count(cleaned_script),
         fallback_text=f"{cleaned_base_title} {cleaned_script}",
     )
-    normalized = _clean_and_dedupe_title_variants(
-        raw_titles,
-        cleaned_base_title,
-        requested_count,
-        support_tags=support_tags,
-    )
+    seen: set[str] = {cleaned_base_title.lower()}
+    normalized: list[str] = []
+
+    for candidate in raw_titles:
+        cleaned = _normalize_variant_title(candidate, max_len=settings.title_max_chars)
+        if cleaned and cleaned.lower() not in seen:
+            seen.add(cleaned.lower())
+            normalized.append(cleaned)
+        if len(normalized) >= requested_count:
+            break
 
     if len(normalized) < requested_count:
-        fallback_titles = _generate_deterministic_title_variants(
+        fallback_titles = _backfill_variant_candidates(
             cleaned_base_title,
             cleaned_script,
             requested_count,
+            seen,
         )
         for candidate in fallback_titles:
-            if candidate not in normalized and candidate != cleaned_base_title:
-                normalized.append(candidate)
-            if len(normalized) >= requested_count:
-                break
-
-    if len(normalized) < requested_count:
-        emergency_titles = _build_emergency_title_variants(
-            cleaned_base_title,
-            cleaned_script,
-            requested_count,
-            support_tags=support_tags,
-        )
-        for candidate in emergency_titles:
-            if candidate not in normalized and candidate != cleaned_base_title:
-                normalized.append(candidate)
+            cleaned = _normalize_variant_title(candidate, max_len=settings.title_max_chars)
+            target = cleaned if cleaned else candidate.strip()
+            if target and target.lower() not in seen:
+                seen.add(target.lower())
+                normalized.append(target)
             if len(normalized) >= requested_count:
                 break
 

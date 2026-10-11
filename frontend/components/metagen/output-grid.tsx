@@ -37,16 +37,66 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
   const [allCopied, setAllCopied] = React.useState(false)
   const [isSourceModalOpen, setIsSourceModalOpen] = React.useState(false)
   const [isSeoPopoverOpen, setIsSeoPopoverOpen] = React.useState(false)
+  const seoPopoverRef = React.useRef<HTMLDivElement>(null)
 
-  // 3 Distinct high-converting title angles
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (seoPopoverRef.current && !seoPopoverRef.current.contains(event.target as Node)) {
+        setIsSeoPopoverOpen(false)
+      }
+    }
+    if (isSeoPopoverOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isSeoPopoverOpen])
+
+  // Helper to format title and clamp strictly within YouTube safe bounds (max 85 chars, word-bounded)
+  const formatClampedTitle = (title: string, maxLen: number = 85): string => {
+    const trimmed = title.trim()
+    if (trimmed.length <= maxLen) return trimmed
+    const truncated = trimmed.slice(0, maxLen)
+    const lastSpace = truncated.lastIndexOf(" ")
+    return (lastSpace > 30 ? truncated.slice(0, lastSpace) : truncated).trim()
+  }
+
+  // 3 Distinct high-converting title angles with strict character budgeting
   const titleAngles = React.useMemo(() => {
-    const base = result.title
+    const base = result.title.trim()
+    const currentYear = new Date().getFullYear()
+
+    // SEO Angle: Focus on key subject before colon or core topic
+    let seoCandidate = ""
+    if (base.includes(":")) {
+      const parts = base.split(":")
+      const mainSubject = parts[0].trim()
+      const detail = parts[1].trim()
+      seoCandidate = `${mainSubject}: ${detail}`
+    } else {
+      seoCandidate = `${base}: Complete Breakdown`
+    }
+    if (seoCandidate.length > 85) {
+      seoCandidate = formatClampedTitle(seoCandidate, 85)
+    }
+
+    // Action Angle: Tutorial / How-to formulation
+    const strippedThe = base.replace(/^The\s+/i, "")
+    let actionCandidate = `How ${strippedThe} Works (${currentYear} Guide)`
+    if (actionCandidate.length > 85) {
+      actionCandidate = `How to Master ${strippedThe}`
+      if (actionCandidate.length > 85) {
+        actionCandidate = formatClampedTitle(`How ${strippedThe} Works`, 85)
+      }
+    }
+
     return [
       {
         id: "curiosity",
         label: "Curiosity & High CTR",
         shortLabel: "Curiosity",
-        title: base,
+        title: formatClampedTitle(base, 85),
         score: 98,
         icon: TrendingUp,
       },
@@ -54,9 +104,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
         id: "seo",
         label: "Search & SEO Dominant",
         shortLabel: "SEO Dominant",
-        title: base.includes(":")
-          ? base.split(":")[1].trim() + " (Full Architectural Breakdown)"
-          : base + ": Deep Dive Breakdown & Architecture",
+        title: formatClampedTitle(seoCandidate, 85),
         score: 94,
         icon: Search,
       },
@@ -64,7 +112,7 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
         id: "action",
         label: "Direct Action & Tutorial",
         shortLabel: "Direct Action",
-        title: `How ${base.replace(/^The /i, "")} Actually Works (2026 Guide)`,
+        title: formatClampedTitle(actionCandidate, 85),
         score: 91,
         icon: Zap,
       },
@@ -146,13 +194,28 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
         <div className="flex flex-wrap justify-center items-center gap-2 w-full sm:w-auto">
           {/* Interactive SEO Score Badge (Hover or Click expands scorecard) */}
           <div
+            ref={seoPopoverRef}
             className="relative"
-            onMouseEnter={() => setIsSeoPopoverOpen(true)}
-            onMouseLeave={() => setIsSeoPopoverOpen(false)}
+            onMouseEnter={() => {
+              if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
+                setIsSeoPopoverOpen(true)
+              }
+            }}
+            onMouseLeave={() => {
+              if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
+                setIsSeoPopoverOpen(false)
+              }
+            }}
           >
             <button
-              onClick={() => setIsSeoPopoverOpen((prev) => !prev)}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsSeoPopoverOpen((prev) => !prev)
+              }}
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface dark:bg-zinc-900 border border-emerald-500/40 hover:border-emerald-500 shadow-xs text-xs font-semibold transition-all cursor-pointer"
+              aria-expanded={isSeoPopoverOpen}
+              aria-label="Toggle SEO scorecard"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
               <span className="font-sans font-bold text-emerald-600 dark:text-emerald-400 text-xs">
@@ -164,16 +227,26 @@ export function OutputGrid({ result, sourceScript = "", onReset }: OutputGridPro
               <Info className="w-3.5 h-3.5 text-muted-foreground opacity-80 ml-0.5" />
             </button>
 
-            {/* Hover SEO Popover Card */}
+            {/* Hover/Click SEO Popover Card */}
             {isSeoPopoverOpen && (
               <div className="absolute left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 top-full mt-2 w-72 p-4 rounded-2xl bg-surface dark:bg-zinc-900 border border-border shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-3">
                 <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
                   <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
                     SEO Score Breakdown
                   </span>
-                  <span className="font-sans text-xs font-bold text-emerald-500">
-                    {result.seo_score ?? 98}% Overall
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans text-xs font-bold text-emerald-500">
+                      {result.seo_score ?? 98}% Overall
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSeoPopoverOpen(false)}
+                      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      aria-label="Close SEO breakdown"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2 text-xs">

@@ -63,8 +63,9 @@ _STOP_WORDS = frozenset({
     "show", "showed", "shown", "showing",
     "try", "tried", "trying",
     "look", "looked", "looking",
-    # YouTube script filler
-    "video", "today", "guys", "hey", "okay", "alright",
+    # YouTube script filler & conversational openers
+    "video", "today", "todays", "today's", "guys", "hey", "okay", "alright",
+    "welcome", "back", "everyone", "everybody", "hello", "hi", "folks",
     "specifically", "actually", "basically", "literally", "simply",
     "clearly", "exactly", "completely", "entirely", "fully",
     "partially", "slightly", "mostly", "usually", "often",
@@ -197,20 +198,31 @@ def extract_tags(text: str, top_n: int = 15) -> list[str]:
         reverse=True,
     )
 
+    def _is_redundant(candidate: str, existing_list: list[str]) -> bool:
+        c_words = set(candidate.split())
+        for existing in existing_list:
+            e_words = set(existing.split())
+            if c_words.issubset(e_words) or e_words.issubset(c_words):
+                return True
+            if candidate in existing or existing in candidate:
+                return True
+        return False
+
     result: list[str] = []
     covered_words: set[str] = set()
 
-    max_phrases = min(len(phrase_scored), max(top_n * 3 // 4, 4))
-    for phrase, _score in phrase_scored[:max_phrases]:
+    for phrase, _score in phrase_scored:
         if len(result) >= top_n:
             break
+        if _is_redundant(phrase, result):
+            continue
         result.append(phrase)
         covered_words.update(phrase.split())
 
     for word, _score in uni_scored:
         if len(result) >= top_n:
             break
-        if word in covered_words:
+        if word in covered_words or any(word in p.split() for p in result):
             continue
         result.append(word)
         covered_words.add(word)
