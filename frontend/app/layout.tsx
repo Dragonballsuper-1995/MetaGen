@@ -7,12 +7,14 @@ import { ThemeProvider } from '@/components/theme-provider'
 const geistSans = Geist({ 
   subsets: ["latin"], 
   variable: "--font-geist-sans", 
-  display: 'swap' 
+  display: 'swap',
+  preload: false,
 });
 const geistMono = Geist_Mono({ 
   subsets: ["latin"], 
   variable: "--font-geist-mono", 
-  display: 'swap' 
+  display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {

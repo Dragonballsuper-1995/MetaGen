@@ -2011,6 +2011,7 @@ _MODEL_DISPLAY_NAMES = {
     "qwen-2.5-1.5b": "Qwen 2.5 1.5B (Custom HF)",
     "local-llama1b": "Llama 3.2 1B (Custom HF)",
     "llama-3.2-1b": "Llama 3.2 1B (Custom HF)",
+    "local-auto": "Auto Local GGUF (Custom HF)",
 }
 
 
@@ -2022,8 +2023,25 @@ def _human_model_name(model_id_or_choice: str) -> str:
     return f"{cleaned.title()}"
 
 
+def _resolve_best_local_model() -> str:
+    """Find fastest/best fine-tuned GGUF model currently present on disk, defaulting to mistral."""
+    try:
+        from download_model import MODEL_CATALOG
+        for slm_candidate in ("local-qwen1.5b", "local-llama1b", "local-phi4", "local-qwen", "local-llama3", "mistral"):
+            slm_key = _MODEL_CHOICE_TO_CATALOG_KEY.get(slm_candidate)
+            if slm_key and slm_key in MODEL_CATALOG:
+                fname = MODEL_CATALOG[slm_key]["filename"]
+                if os.path.exists(os.path.join("backend", "model", fname)) or os.path.exists(fname):
+                    return slm_candidate
+    except Exception as e:
+        logger.debug("Failed checking on-disk models for local-auto: %s", e)
+    return "mistral"
+
+
 def _normalize_model_choice(model_choice: str | None) -> str:
     choice = (model_choice or "auto").strip().lower()
+    if choice in ("local-auto", "custom-auto", "auto-local"):
+        return "local-auto"
     if choice in ("mistral", "custom", "hf", "huggingface", "local", "mistral-7b", "local-mistral"):
         return "mistral"
     if choice in ("llama", "llama3", "llama-3", "llama-3.1", "llama3.1", "llama-3.1-8b", "local-llama3", "local-llama"):
@@ -2466,9 +2484,10 @@ def _llm_call(
     normalized_choice = _normalize_model_choice(model_choice)
 
     # 1. Explicit provider selections
-    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b"):
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b", "local-auto"):
+        target_local_choice = _resolve_best_local_model() if normalized_choice == "local-auto" else normalized_choice
         try:
-            llm = get_llm(normalized_choice)
+            llm = get_llm(target_local_choice)
             inference_start = perf_counter()
             response = llm.create_chat_completion(
                 messages=[
@@ -2483,13 +2502,13 @@ def _llm_call(
             )
             elapsed = perf_counter() - inference_start
             result_text = response["choices"][0]["message"]["content"].strip()
-            _last_used_model_name = _human_model_name(normalized_choice)
-            logger.info("Local LLM call completed in %.2fs (model=%s)", elapsed, normalized_choice)
+            _last_used_model_name = _human_model_name(target_local_choice)
+            logger.info("Local LLM call completed in %.2fs (model=%s)", elapsed, target_local_choice)
             return _parse_json_safe(result_text)
         except Exception as local_err:
             logger.warning(
                 "Local model '%s' execution failed (%s). Attempting cloud failover...",
-                normalized_choice,
+                target_local_choice,
                 local_err,
             )
             groq = _get_groq_client()
@@ -2716,9 +2735,10 @@ def _llm_stream(
     normalized_choice = _normalize_model_choice(model_choice)
 
     # 1. Explicit provider selections
-    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b"):
+    if normalized_choice in ("mistral", "local-llama3", "local-qwen", "local-phi4", "local-qwen1.5b", "local-llama1b", "local-auto"):
+        target_local_choice = _resolve_best_local_model() if normalized_choice == "local-auto" else normalized_choice
         try:
-            llm = get_llm(normalized_choice)
+            llm = get_llm(target_local_choice)
             start = perf_counter()
             token_count = 0
             response = llm.create_chat_completion(
@@ -2739,12 +2759,12 @@ def _llm_stream(
                 if content:
                     token_count = 1
                     yield content
-                _last_used_model_name = _human_model_name(normalized_choice)
+                _last_used_model_name = _human_model_name(target_local_choice)
                 logger.info(
                     "Local LLM stream completed in %.2fs (%d chunks, model=%s)",
                     perf_counter() - start,
                     token_count,
-                    normalized_choice,
+                    target_local_choice,
                 )
                 return
 
@@ -2755,18 +2775,18 @@ def _llm_stream(
                     token_count += 1
                     yield token
 
-            _last_used_model_name = _human_model_name(normalized_choice)
+            _last_used_model_name = _human_model_name(target_local_choice)
             logger.info(
                 "Local LLM stream completed in %.2fs (%d chunks, model=%s)",
                 perf_counter() - start,
                 token_count,
-                normalized_choice,
+                target_local_choice,
             )
             return
         except Exception as local_err:
             logger.warning(
                 "Local model '%s' stream failed (%s). Attempting cloud failover...",
-                normalized_choice,
+                target_local_choice,
                 local_err,
             )
             groq = _get_groq_client()

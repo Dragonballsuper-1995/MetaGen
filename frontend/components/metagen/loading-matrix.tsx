@@ -41,6 +41,8 @@ function getModelStreamLabel(choice?: string): string {
       return "OpenCode Zen Stream"
     case "openrouter":
       return "OpenRouter Stream"
+    case "local-auto":
+      return "Local GGUF Auto Stream"
     case "auto":
       return "Auto Cloud Stream"
     default:

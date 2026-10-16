@@ -5,6 +5,7 @@ import { useTheme } from "next-themes"
 import { Moon, Sun, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ModelChoice } from "@/lib/types"
+import { HeaderLogo } from "./header-logo"
 
 
 interface HeaderProps {
@@ -33,14 +34,10 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-surface/95 backdrop-blur-md px-4 md:px-8 py-3 flex items-center justify-between">
-      {/* Brand: Using official header_logo.svg */}
+      {/* Brand: Using official header logo */}
       <div className="flex items-center gap-3">
         <div className="h-6 md:h-7 flex items-center">
-          <img
-            src="/logos/header_logo.svg"
-            alt="MetaGen"
-            className="h-full w-auto object-contain"
-          />
+          <HeaderLogo className="h-full w-auto" />
         </div>
       </div>
 

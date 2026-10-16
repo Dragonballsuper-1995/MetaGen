@@ -98,10 +98,12 @@ export default function Page() {
         onHistoryToggle={() => setIsHistoryOpen(true)}
       />
 
-      {/* Main Terminal / Studio Stage */}
+      {/* Main Terminal / Studio Stage (Scroll-safe with bottom ribbon clearance) */}
       <main
-        className={`relative z-10 flex-1 w-full px-3 sm:px-6 md:px-8 min-h-0 flex flex-col items-center ${
-          appState === "output" ? "justify-start pt-2.5 pb-12" : "justify-center py-4 pb-12"
+        className={`relative z-10 flex-1 w-full px-3 sm:px-6 md:px-8 min-h-0 flex flex-col items-center overflow-y-auto overflow-x-hidden ${
+          appState === "output"
+            ? "justify-start pt-2.5 pb-16 sm:pb-20"
+            : "justify-start py-2 sm:py-4 pb-16 sm:pb-20"
         }`}
       >
         <TerminalCore

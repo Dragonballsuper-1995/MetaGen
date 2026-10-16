@@ -56,10 +56,12 @@ export function TelemetryRibbon({
       ? "LLAMA 3.2 1B (CUSTOM HF)"
       : selectedModel === "phi-4-mini"
       ? "PHI-4 MINI 3.8B (CUSTOM HF)"
+      : selectedModel === "local-auto"
+      ? "LOCAL GGUF AUTO (BEST ON-DISK)"
       : "AUTO-CASCADE ENGINE (MULTI-TIER)"
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-surface/90 backdrop-blur-md border-t border-border px-4 md:px-8 py-2 text-xs text-muted-foreground flex items-center justify-between select-none font-mono">
+    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-surface/90 backdrop-blur-md border-t border-border px-3 sm:px-6 md:px-8 py-2 text-xs text-muted-foreground flex items-center justify-between select-none font-mono">
       {/* Left: Interactive Model Warm Indicator */}
       <div className="flex items-center gap-2">
         <div
@@ -140,9 +142,9 @@ export function TelemetryRibbon({
           </strong>
         </div>
 
-        <div className="hidden md:flex items-center gap-1 text-muted-foreground">
+        <div className="hidden lg:flex items-center gap-1 text-muted-foreground max-w-[220px] xl:max-w-none">
           <span>MODEL:</span>
-          <strong className="text-foreground font-semibold">{modelLabel}</strong>
+          <strong className="text-foreground font-semibold truncate">{modelLabel}</strong>
         </div>
 
         {timeStr && (

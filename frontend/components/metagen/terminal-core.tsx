@@ -14,8 +14,76 @@ import {
   Zap,
   Globe,
   Bot,
+  ChevronDown,
+  Check,
 } from "lucide-react"
 import { MetadataResult, ModelChoice } from "@/lib/types"
+
+const CUSTOM_MODELS = [
+  {
+    id: "local-auto",
+    name: "Auto (Local GGUF)",
+    shortName: "Auto",
+    badge: "Auto",
+    desc: "Auto-detects fastest on-disk model",
+    icon: Sparkles,
+    color: "text-amber-400",
+  },
+  {
+    id: "qwen-2.5-1.5b",
+    name: "Qwen 2.5 1.5B",
+    shortName: "Qwen 2.5 1.5B",
+    badge: "~35 tok/s",
+    desc: "Ultra-fast fine-tuned SLM (1.05 GB)",
+    icon: Bot,
+    color: "text-cyan-300",
+  },
+  {
+    id: "llama-3.2-1b",
+    name: "Llama 3.2",
+    shortName: "Llama 3.2",
+    badge: "~40 tok/s",
+    desc: "Ultra-lightweight hook generator (750 MB)",
+    icon: Cpu,
+    color: "text-indigo-400",
+  },
+  {
+    id: "phi-4-mini",
+    name: "Phi-4 Mini",
+    shortName: "Phi-4 Mini",
+    badge: "CPU Fast",
+    desc: "Microsoft lightweight fine-tune (2.4 GB)",
+    icon: Zap,
+    color: "text-emerald-400",
+  },
+  {
+    id: "qwen-2.5-7b",
+    name: "Qwen 2.5 7B",
+    shortName: "Qwen 2.5 7B",
+    badge: "High Accuracy",
+    desc: "Fine-tuned for structured tags (4.4 GB)",
+    icon: Bot,
+    color: "text-cyan-400",
+  },
+  {
+    id: "llama-3.1-8b",
+    name: "Llama 3.1",
+    shortName: "Llama 3.1",
+    badge: "High CTR",
+    desc: "Fine-tuned for hook retention (4.6 GB)",
+    icon: Cpu,
+    color: "text-blue-400",
+  },
+  {
+    id: "mistral",
+    name: "Mistral",
+    shortName: "Mistral",
+    badge: "Primary",
+    desc: "Custom fine-tuned SEO model (4.1 GB)",
+    icon: Cpu,
+    color: "text-orange-400",
+  },
+]
 
 export type AppState = "input" | "loading" | "output"
 
@@ -71,6 +139,36 @@ export function TerminalCore({
   const [selectedPresetIndex, setSelectedPresetIndex] = React.useState<number | null>(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const cardRef = React.useRef<HTMLDivElement>(null)
+  const [isCustomDropdownOpen, setIsCustomDropdownOpen] = React.useState(false)
+  const customDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  const activeCustomModel = React.useMemo(() => {
+    return CUSTOM_MODELS.find((m) => m.id === selectedModel)
+  }, [selectedModel])
+
+  // Click-outside and Escape key listener for custom models dropdown
+  React.useEffect(() => {
+    if (!isCustomDropdownOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        customDropdownRef.current &&
+        !customDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsCustomDropdownOpen(false)
+      }
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsCustomDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isCustomDropdownOpen])
 
   const wordCount = React.useMemo(() => {
     return script.trim().split(/\s+/).filter(Boolean).length
@@ -138,149 +236,134 @@ export function TerminalCore({
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center flex-1 h-full min-h-0 py-2">
+    <div className="w-full max-w-6xl mx-auto flex flex-col items-center py-2 my-auto">
       {/* 1. INPUT STAGE */}
       {appState === "input" && (
-        <div className="w-full max-w-4xl flex flex-col items-center text-center gap-4 sm:gap-6 my-auto">
+        <div className="w-full max-w-4xl flex flex-col items-center text-center gap-3 sm:gap-5 my-auto">
           {/* Hero Headline */}
           <div className="flex flex-col items-center gap-2">
             {/* Model Selector Pill */}
+            {/* Single Bigger Pill Incorporating Auto & Custom */}
             {onModelChange && (
-              <div className="inline-flex items-center p-1 bg-surface border border-border rounded-full shadow-sm overflow-x-auto max-w-[90vw] md:max-w-full hide-scrollbar gap-1">
+              <div
+                ref={customDropdownRef}
+                className="relative inline-flex items-center p-1 sm:p-1.5 bg-surface/95 dark:bg-zinc-900/90 backdrop-blur-md border border-border/80 dark:border-white/10 rounded-full shadow-md gap-1 sm:gap-1.5 select-none z-30 transition-all"
+              >
+                {/* 1. Auto Pill */}
                 <button
                   type="button"
-                  onClick={() => onModelChange("auto")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                  onClick={() => {
+                    onModelChange("auto")
+                    setIsCustomDropdownOpen(false)
+                  }}
+                  className={`flex items-center justify-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                     selectedModel === "auto"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   }`}
                   title="Automatic multi-tier failover: Groq -> Gemini -> Zen -> OpenRouter -> Local"
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Auto Cloud</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Auto</span>
                 </button>
 
+                {/* 2. Custom Pill (Adaptive width based on active text) */}
                 <button
                   type="button"
-                  onClick={() => onModelChange("qwen-2.5-1.5b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "qwen-2.5-1.5b"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                  onClick={() => setIsCustomDropdownOpen((prev) => !prev)}
+                  aria-expanded={isCustomDropdownOpen}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    selectedModel !== "auto"
+                      ? "bg-primary text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                   }`}
-                  title="Alibaba Qwen 2.5 1.5B (Ultra-fast SLM, ~35 tok/s CPU)"
+                  title="Select custom fine-tuned GGUF models"
                 >
-                  <Bot className="w-3 h-3 text-cyan-300" />
-                  <span>Qwen 1.5B</span>
+                  {activeCustomModel ? (
+                    React.createElement(activeCustomModel.icon, {
+                      className: `w-3.5 h-3.5 flex-shrink-0 ${selectedModel !== "auto" ? "text-white" : activeCustomModel.color}`,
+                    })
+                  ) : (
+                    <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
+                  )}
+                  <span>
+                    {activeCustomModel ? activeCustomModel.shortName : "Custom"}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+                      isCustomDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => onModelChange("llama-3.2-1b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "llama-3.2-1b"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Meta Llama 3.2 1B (Ultra-lightweight SLM, ~40 tok/s CPU)"
-                >
-                  <Cpu className="w-3 h-3 text-indigo-400" />
-                  <span>Llama 1B</span>
-                </button>
+                {/* Custom GGUF Models Dropdown Popover */}
+                {isCustomDropdownOpen && (
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 sm:w-80 p-2 rounded-2xl bg-surface/98 dark:bg-zinc-900/98 backdrop-blur-xl border border-border shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-1 text-left select-none">
+                    <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/70 mb-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-[11px] font-bold text-foreground uppercase tracking-wider font-mono">
+                          Custom GGUF Models
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        Local Engine
+                      </span>
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={() => onModelChange("phi-4-mini")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "phi-4-mini"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Microsoft Phi-4 Mini 3.8B (Ultra-fast lightweight fine-tune)"
-                >
-                  <Zap className="w-3 h-3 text-emerald-400" />
-                  <span>Phi-4 Mini</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("qwen-2.5-7b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "qwen-2.5-7b"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Alibaba Qwen 2.5 7B (Fine-tuned for structured tag relevance)"
-                >
-                  <Bot className="w-3 h-3 text-cyan-400" />
-                  <span>Qwen 2.5</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("llama-3.1-8b")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "llama-3.1-8b"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Meta Llama 3.1 8B (Fine-tuned for high CTR hooks)"
-                >
-                  <Cpu className="w-3 h-3 text-blue-400" />
-                  <span>Llama 3.1</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("mistral")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "mistral"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Custom Fine-Tuned Mistral 7B (Local GGUF)"
-                >
-                  <Cpu className="w-3 h-3 text-orange-400" />
-                  <span>Mistral 7B</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("gemini")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "gemini"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Google Gemini 3.6 Flash (1M+ Token Context)"
-                >
-                  <Globe className="w-3 h-3 text-sky-400" />
-                  <span>Gemini 3.6</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onModelChange("groq")}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                    selectedModel === "groq"
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title="Groq LPU Ultra-Fast Inference"
-                >
-                  <Zap className="w-3 h-3 text-amber-400" />
-                  <span>Groq 120B</span>
-                </button>
+                    <div
+                      data-testid="custom-models-list"
+                      className="flex flex-col gap-0.5 max-h-[190px] sm:max-h-[220px] overflow-y-auto pb-2 pr-1 custom-scrollbar"
+                    >
+                      {CUSTOM_MODELS.map((m, idx) => {
+                        const Icon = m.icon
+                        const isSelected = selectedModel === m.id
+                        return (
+                          <React.Fragment key={m.id}>
+                            {idx === 1 && <div className="my-1 border-t border-border/50" />}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onModelChange(m.id)
+                                setIsCustomDropdownOpen(false)
+                              }}
+                              className={`flex items-center justify-between p-1.5 sm:p-2 rounded-xl text-xs transition-colors cursor-pointer w-full text-left ${
+                                isSelected
+                                  ? "bg-primary/10 border border-primary/30 text-foreground"
+                                  : "hover:bg-muted/70 text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className={`p-1.5 rounded-lg flex-shrink-0 ${isSelected ? "bg-primary text-white" : "bg-muted"}`}>
+                                  <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-white" : m.color}`} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold text-xs text-foreground truncate">{m.name}</span>
+                                    <span className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                      {m.badge}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground truncate">{m.desc}</span>
+                                </div>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 ml-1.5" />}
+                            </button>
+                          </React.Fragment>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.08] text-foreground">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight leading-[1.1] text-foreground">
               Elevate Your <br />
               <span className="text-gradient-blue">Video Metadata</span>
             </h1>
 
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mt-0.5">
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto mt-0.5 sm:mt-1">
               Transform scripts into SEO-optimized titles, descriptions, and tags in seconds.
             </p>
           </div>
@@ -406,7 +489,7 @@ export function TerminalCore({
 
       {/* 2. LOADING STAGE */}
       {appState === "loading" && (
-        <div className="w-full max-w-3xl">
+        <div className="w-full max-w-3xl my-auto">
           <LoadingMatrix
             scriptSnippet={script}
             streamTokens={streamTokens}
@@ -422,7 +505,7 @@ export function TerminalCore({
 
       {/* 3. STUDIO RESULTS STAGE */}
       {appState === "output" && result && (
-        <div className="w-full flex-1 h-full min-h-0 flex flex-col justify-center">
+        <div className="w-full flex-1 min-h-0 flex flex-col justify-start">
           <OutputGrid result={result} sourceScript={script} onReset={onReset} />
         </div>
       )}
