@@ -74,9 +74,11 @@ frontend/lh_report_final.json
 best.html
 good.html
 
-# Local specifications, notes, and training artifacts (untracked on remote)
+# Local specifications, tools, and training artifacts (untracked on remote)
 CLAUDE.md
 PRD.md
 features/
 notebooks/
+scripts/
+tests/
 docs/api_and_model_expansion_plan.md
