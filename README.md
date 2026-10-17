@@ -1,19 +1,10 @@
----
-title: MetaGen
-emoji: 🚀
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 <div align="center">
   
-# 🚀 MetaGen | AI-Powered YouTube Metadata Studio
+# MetaGen | AI-Powered YouTube Metadata Studio
 
 [![Live Frontend](https://img.shields.io/badge/Frontend-Live_on_Vercel-000000?style=for-the-badge&logo=vercel)](https://metagen-one.vercel.app)
 [![Live Backend](https://img.shields.io/badge/Backend-Live_on_Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/SujalChhajed925/MetaGen)
+[![Keep-Alive](https://img.shields.io/badge/Keep--Alive-cron--job.org-2ba02c?style=for-the-badge&logo=clock&logoColor=white)](https://cron-job.org)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)]()
 [![Next.js](https://img.shields.io/badge/Next.js-16_Turbopack-000000?style=for-the-badge&logo=next.js&logoColor=white)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)]()
@@ -24,13 +15,13 @@ A high-performance, full-stack AI engineering platform that transforms raw video
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **MetaGen** eliminates the friction of video publishing. By providing a video script or transcript, creators receive a full YouTube optimization package with real-time SSE token streaming, multi-tier cloud failover, custom fine-tuned GGUF inference, A/B curiosity title hooks, and an authentic YouTube search & mobile feed simulator.
 
 ---
 
-## 🧠 Supported Models Matrix
+## Supported Models Matrix
 
 MetaGen supports both ultra-fast cloud LPUs and custom fine-tuned open-source LLMs fine-tuned specifically for YouTube metadata generation and SEO optimization:
 
@@ -38,7 +29,9 @@ MetaGen supports both ultra-fast cloud LPUs and custom fine-tuned open-source LL
 
 | Model Name | Parameters | Quantization | Hugging Face Repository | Chat Template | Key Strength |
 | :--- | :---: | :---: | :--- | :---: | :--- |
-| **Microsoft Phi-4 Mini** | 3.8B | `Q4_K_M` | [`SujalChhajed925/yt-seo-phi4-merged`](https://huggingface.co/SujalChhajed925/yt-seo-phi4-merged) | `ChatML` | Ultra-fast lightweight inference & compact memory footprint |
+| **Meta Llama 3.2** | 1B | `Q4_K_M` | [`SujalChhajed925/yt-seo-llama3.2-1b-merged`](https://huggingface.co/SujalChhajed925/yt-seo-llama3.2-1b-merged) | `Llama-3` | Ultra-lightweight SLM (~750MB), ~40 tok/s CPU, high-velocity hook generation |
+| **Alibaba Qwen 2.5** | 1.5B | `Q4_K_M` | [`SujalChhajed925/yt-seo-qwen2.5-1.5b-merged`](https://huggingface.co/SujalChhajed925/yt-seo-qwen2.5-1.5b-merged) | `ChatML` | Ultra-compact tag extractor (<1.1GB), ~35 tok/s CPU, structured JSON reliability |
+| **Microsoft Phi-4 Mini** | 3.8B | `Q4_K_M` | [`SujalChhajed925/yt-seo-phi4-merged`](https://huggingface.co/SujalChhajed925/yt-seo-phi4-merged) | `ChatML` | Lightweight inference & compact memory footprint |
 | **Alibaba Qwen 2.5** | 7B | `Q4_K_M` | [`SujalChhajed925/yt-seo-qwen2.5-merged`](https://huggingface.co/SujalChhajed925/yt-seo-qwen2.5-merged) | `ChatML` | High tag precision, dense keyword extraction, & structured JSON |
 | **Meta Llama 3.1** | 8B | `Q4_K_M` | [`SujalChhajed925/yt-seo-llama3-merged`](https://huggingface.co/SujalChhajed925/yt-seo-llama3-merged) | `Llama-3` | High-CTR title hooks, curiosity framing, & engaging descriptions |
 | **Mistral 7B** | 7B | `Q4_K_M` | [`SujalChhajed925/yt-seo-mistral-merged`](https://huggingface.co/SujalChhajed925/yt-seo-mistral-merged) | `Mistral-Instruct` | Balanced baseline SEO generation with deep formatting rules |
@@ -55,7 +48,7 @@ MetaGen supports both ultra-fast cloud LPUs and custom fine-tuned open-source LL
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 - **Single-Viewport Studio Cockpit:** A refined, zero-scroll interface fitting within `100vh` on standard desktop screens with internal card scrolling for long content.
 - **Morphing Physical Card:** Smooth expanding card interface with preset samples (Tech Review, Tutorials, Travel Vlog) and character counters.
@@ -64,10 +57,11 @@ MetaGen supports both ultra-fast cloud LPUs and custom fine-tuned open-source LL
 - **Authentic YouTube Live Simulator:** Dedicated tab previewing how your video will look on **Desktop Search Grids** and **Mobile App Feeds** with 16:9 thumbnails, timestamps, and channel badges.
 - **Real-Time Token Streaming:** Live terminal stream preview in the loading matrix using Server-Sent Events (SSE) with early keyword extraction.
 - **Dynamic Context Eviction:** Backend automatically manages memory when switching between 4GB+ GGUF models to prevent OOM errors on constrained environments (16GB RAM limits).
+- **Zero-Cold-Start Uptime Heartbeat:** Automated external cron-job pinging (`https://sujalchhajed925-metagen.hf.space/health` every 10 min) completely eliminates Hugging Face Space 48-hour idle sleep, guaranteeing instant backend availability.
 
 ---
 
-## 📁 Clean Repository Structure
+## Repository Structure
 
 ```
 MetaGen-Production/
@@ -111,7 +105,7 @@ MetaGen-Production/
 
 ---
 
-## 💻 Local Development Setup
+## Local Development Setup
 
 ### 1. Clone the repository
 ```bash
@@ -143,7 +137,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🧪 Testing & Benchmarking
+## Testing & Benchmarking
 
 ```bash
 # 1. Run backend unit tests & failover cascade assertions
@@ -164,5 +158,18 @@ cd frontend && npx tsc --noEmit && npm run build
 
 ---
 
-## 📄 License
+## 24/7 Production Keep-Alive Architecture (cron-job.org)
+
+To guarantee zero downtime and eliminate cold-start latencies without incurring cloud hosting costs:
+
+- **The Challenge:** Hugging Face Spaces (CPU Basic) puts inactive containers into a sleep state after **48 hours of zero traffic**. Waking a sleeping container requires re-provisioning and model preloading, resulting in a **45–90 second cold start** for the first user.
+- **The Solution:** An automated cron monitor via [cron-job.org](https://cron-job.org) executes an HTTP `GET` request every **10 minutes** to:
+  ```http
+  GET https://sujalchhajed925-metagen.hf.space/health
+  ```
+- **How It Works:** The `/health` endpoint responds in `<5ms` (`{"status":"healthy"}`) without initializing heavy LLM weights or consuming CPU quotas. This resets Hugging Face's 48-hour idle timer, keeping the 16 GB container permanently warm 24/7/365 with **sub-second TTFT and zero cold starts**.
+
+---
+
+## License
 MIT License. Built for creators and developers.

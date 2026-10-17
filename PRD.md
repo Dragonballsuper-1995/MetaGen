@@ -119,6 +119,7 @@ Each generation must produce:
 ### 7.2 Reliability & Availability
 - Automatic graceful degradation from Cloud to Local GGUF.
 - Background keep-warm heartbeat daemon (`backend/services/model_runtime.py`) preventing CPU memory eviction.
+- External automated HTTP keep-alive ping via `cron-job.org` (`https://sujalchhajed925-metagen.hf.space/health` every 10 min) eliminating Hugging Face Spaces 48-hour idle sleep.
 - Rate limiting via SlowAPI (`10/minute` default).
 
 ### 7.3 Security

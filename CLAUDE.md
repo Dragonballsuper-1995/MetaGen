@@ -9,7 +9,7 @@ MetaGen turns a video script (20–3000 chars) into YouTube metadata: title, des
 - **Backend** — FastAPI (Python 3.11), deployed as a Docker Space on Hugging Face (port 7860).
 - **Frontend** — Next.js 16 App Router **static export**, deployed to Vercel.
 
-`PRD.md` is the product spec. `features/` holds seven on-hold feature specs (F-01…F-07) that are *not* implemented. `api_and_model_expansion_plan.md` is an in-progress, phase-gated plan to add Gemini/OpenRouter/OpenCode Zen providers — read it before touching provider wiring in `ai_engine.py`.
+`PRD.md` is the product spec. `features/` holds seven on-hold feature specs (F-01…F-07) that are *not* implemented. The multi-provider cloud cascade (Gemini, OpenCode Zen, OpenRouter) and dynamic local model catalog (`download_model.py`) are fully implemented and operational in production.
 
 ## Commands
 
@@ -128,11 +128,13 @@ Two remotes, two targets:
 - `origin` → GitHub (`Dragonballsuper-1995/MetaGen`). Vercel builds the frontend from here.
 - `hf` → the Hugging Face Space (`SujalChhajed925/MetaGen`). Pushing here deploys the backend.
 
-The HF Space builds the root `Dockerfile` and runs `run_app.py`, which starts the GGUF download on a **daemon thread** and launches uvicorn on 7860 immediately — the Space must answer health checks in under a second, so never make the model download blocking. `download_model.py` pulls `custom-mistral-yt-seo-Q4_K_M.gguf` from `SujalChhajed925/yt-seo-mistral-merged` into `backend/model/`. Model files are gitignored and must never be committed. `start.sh` is the older blocking variant, unused by the Dockerfile.
+The HF Space builds the root `Dockerfile` and runs `run_app.py`, which starts GGUF downloads on a **daemon thread** (preloading `llama-3.2-1b` and `qwen-2.5-1.5b` by default via `PRELOAD_MODELS`) and launches uvicorn on 7860 immediately — the Space must answer health checks in under a second, so never make model downloads blocking. `download_model.py` manages the dynamic local GGUF catalog. Model files are gitignored and must never be committed. `start.sh` is the older blocking variant, unused by the Dockerfile.
 
-`README.md` carries HF Space YAML frontmatter (`sdk: docker`, `app_port: 7860`) — it is load-bearing for the Space, so preserve it when editing. `README_new.md` is a minimal alternate copy of that frontmatter, not wired to anything.
+- **Zero-Cold-Start Keep-Alive**: Hugging Face Spaces free tier automatically shuts down after 48 hours of inactivity. To prevent idle sleep and cold starts, an external cron monitor (`cron-job.org`) sends an HTTP `GET` request to `https://sujalchhajed925-metagen.hf.space/health` every 10 minutes, keeping the container warm 24/7 with zero latency penalties.
 
-`GROQ_API_KEY` must be set as an HF Space secret; without it every request degrades to the CPU GGUF path.
+`README.md` in the GitHub repository is kept completely clean without YAML frontmatter. When synced to Hugging Face, `.github/workflows/sync_hf.yml` automatically injects the required HF Space YAML frontmatter (`sdk: docker`, `app_port: 7860`) before pushing to the `hf` Space remote.
+
+Cloud provider keys (`GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `OPENCODE_ZEN_API_KEY`) must be set as HF Space secrets; without them requests degrade to the local CPU GGUF fallback path.
 
 ## Landmines
 

@@ -1,0 +1,52 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - backend-upgrades
+  workflow_dispatch:
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Inject Hugging Face YAML Frontmatter into README
+        run: |
+          python -c "
+          frontmatter = '''---
+          title: MetaGen
+          emoji: 🚀
+          colorFrom: blue
+          colorTo: purple
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          ---
+
+          '''
+          with open('README.md', 'r', encoding='utf-8') as f:
+              content = f.read()
+          with open('README.md', 'w', encoding='utf-8') as f:
+              f.write(frontmatter + content)
+          "
+
+      - name: Commit Frontmatter for Hugging Face
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Inject Hugging Face Spaces metadata [skip ci]" || true
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git push https://SujalChhajed925:$HF_TOKEN@huggingface.co/spaces/SujalChhajed925/MetaGen HEAD:main --force
